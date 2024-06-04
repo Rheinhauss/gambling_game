@@ -25,6 +25,19 @@
           <button @click="shootOpponent">对手</button>
           <button @click="shootSelf">自己</button>
         </div>
+        <!-- 抽牌窗口，v-if控制其显示与隐藏 -->  
+        <div v-if="drawCardStatus" class="card-drawer">  
+          <p>请在下方道具列表中抽取一个道具：</p>
+          <button  
+            v-for="(card, index) in drawableCards"  
+            :key="index"  
+            :class="{ selected: selectedCard === card }"  
+            @click="selectCard(card)"  
+          >  
+            <!-- 使用了require动态导入图片 -->  
+            <img :src="require(`@/assets/${card}.jpg`)" alt="" />  
+          </button>
+        </div>  
       </div>
       <!-- Player 区域 -->
       <div class="player-area">
@@ -52,26 +65,86 @@
       <!-- Buttons 区域 -->
       <div class="buttons-area">
         <button class="play-btn" @click="playCard" :disabled="playCardDisabled">出牌</button>
-        <button class="exit-btn" @click="tempEnd">临时退出游戏</button>
+        <button @click="tempEnd">临时退出游戏</button>
+        <button @click="drawCards">临时抽牌</button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+
+import { ref, watch } from 'vue';
+
 export default {
   name: 'GamePage',
-  data() {
-    return {
-      playerHealth: 1,
-      opponentHealth: 1,
-      opponentImageUrl: require("@/assets/opponent.jpg"),
-      playerImageUrl: require("@/assets/player.jpg"),
-      gunImageUrl: require("@/assets/gun.jpg"),
-      showGunWindow: false, // 开枪窗口显示状态
-      playCardDisabled: false // 出牌按钮可用状态
+  // {Knife, Cigarette, Beer, Handcuffs, MagnifyingGlass, Reverser, Phone, UnknownMedicine}
+
+  setup() {
+    // 使用 ref() 创建响应式引用  
+    const playerHealth = ref(1);  
+    const opponentHealth = ref(1);  
+    const opponentImageUrl = ref(require("@/assets/opponent.jpg"));  
+    const playerImageUrl = ref(require("@/assets/player.jpg"));  
+    const gunImageUrl = ref(require("@/assets/gun.jpg"));  
+    const showGunWindow = ref(false); // 开枪窗口显示状态  
+    const playCardDisabled = ref(false); // 出牌按钮可用状态  
+    const drawCardStatus = ref(false);  
+    const drawableCards = ref(['Knife', 'Cigarette', 'Beer']); // 后端传来的待抽取牌列表  
+    const selectedCard = ref(null); // 存储被选中的卡牌  
+  
+    // 抽牌函数  
+    const drawCards = () => {  
+      drawCardStatus.value = true; 
+      togglePlayCardDisabled();
+    };  
+  
+    // 选择卡牌函数  
+    const selectCard = (card) => {  
+      if (selectedCard.value === card) {  
+        // 如果已经选择了该卡牌，则视为抽取
+        drawCardStatus.value = false;
+        togglePlayCardDisabled();
+        // 待添加抽取卡牌逻辑
+        console.log('抽取了卡牌:', card);  
+        selectedCard.value = null; // 重置选择
+      }
+      else {  
+        // 选择新的卡牌
+        selectedCard.value = card;  
+      }  
+    };  
+  
+    // 监听drawCardStatus，当它为false时重置selectedCard  
+    watch(drawCardStatus, (newVal) => {  
+      if (!newVal) {  
+        selectedCard.value = null;  
+      }  
+    });  
+  
+    // 修改出牌按钮的状态  
+    function togglePlayCardDisabled() {  
+      playCardDisabled.value = !playCardDisabled.value;  
+    }  
+  
+    // 返回响应式数据
+    return {  
+      drawCardStatus,  
+      drawableCards,  
+      selectedCard,  
+      drawCards,  
+      selectCard,  
+      playerHealth,  
+      opponentHealth,  
+      opponentImageUrl,  
+      playerImageUrl,  
+      gunImageUrl,  
+      showGunWindow,  
+      playCardDisabled,  
+      togglePlayCardDisabled
     };
   },
+
   methods: {
     tempEnd() {
       this.$router.push('/end');
@@ -170,6 +243,32 @@ export default {
   background-color: #ffff99;
   color: #333;
 }
+.card-drawer {  
+  position: absolute;  
+  top: 50%;  
+  left: 50%;  
+  transform: translate(-50%, -50%);
+  background-color:white;
+  border: 1px solid black;
+  font-size: 16px;
+  font-weight: bold;  
+  color: #333; 
+}  
+
+.card-drawer button {  
+  flex: 1;
+  max-width: 80%;
+  max-height: 80%;
+  border: none; 
+  background: none; 
+  padding: 20px 20px;
+  cursor: pointer; 
+}  
+  
+.card-drawer button.selected {  
+  /* 被选中的按钮样式：边框加粗并变红 */  
+  border: 3px solid red;
+}  
 
 .opponent-area,
 .player-area {
@@ -236,28 +335,26 @@ export default {
   flex-direction: column;
 }
 
-.play-btn,
-.exit-btn {
+.play-btn{
   width: 40%;
+  height: 60%;
   padding: 10px;
   margin: 5px 0; /* 按钮之间的间距 */
   border: none;
   background-color: #007bff;
   color: white;
-  font-size: 16px;
+  font-size: 25px;
   cursor: pointer;
   font-weight: bold;
 }
 
-.play-btn:disabled,
-.exit-btn:disabled {
+.play-btn:disabled{
   background-color: #dddddd; /* 不可用状态的背景色 */
   color: #555; /* 不可用状态的文字颜色 */
   cursor: not-allowed; /* 鼠标指针样式 */
 }
 
-.play-btn:hover,
-.exit-btn:hover {
+.play-btn:hover {
   background-color: #ffff99;
   color: #333;
 }
