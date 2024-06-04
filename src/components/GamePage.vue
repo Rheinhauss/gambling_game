@@ -15,9 +15,16 @@
       </div>
       <!-- Gun 区域 -->
       <div class="gun-area">
+        <!-- 开枪按钮 -->
         <button class="gun-button" @click="gunButtonClick">
           <img :src="gunImageUrl" alt="Gun Button">
         </button>
+        <!-- 开枪窗口 -->
+        <div v-if="showGunWindow" class="gun-window">
+          <p>请选择开枪的对象：</p>
+          <button @click="shootOpponent">对手</button>
+          <button @click="shootSelf">自己</button>
+        </div>
       </div>
       <!-- Player 区域 -->
       <div class="player-area">
@@ -60,16 +67,31 @@ export default {
       opponentHealth: 1,
       opponentImageUrl: require("@/assets/opponent.jpg"),
       playerImageUrl: require("@/assets/player.jpg"),
-      gunImageUrl: require("@/assets/gun.jpg")
+      gunImageUrl: require("@/assets/gun.jpg"),
+      showGunWindow: false
     };
   },
   methods: {
     tempEnd() {
       this.$router.push('/end');
     },
+    // 手枪按钮点击事件
     gunButtonClick() {
-      // 在这里添加按钮点击后的逻辑
+      // 待添加按钮点击后的逻辑
+      this.showGunWindow = !this.showGunWindow;
       console.log('Gun button clicked!');
+    },
+    // 向对手开枪
+    shootOpponent() {
+      // 待添加向对手开枪的逻辑
+      console.log('向对手开枪');
+      this.showGunWindow = false;
+    },
+    // 向自己开枪
+    shootSelf() {
+      // 待添加向自己开枪的逻辑
+      console.log('向自己开枪');
+      this.showGunWindow = false;
     }
   }
 }
@@ -95,18 +117,54 @@ export default {
 
 .gun-area {
   flex: 1;
+  width: 100%;
+  height: auto;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .gun-button {
+  flex: 1;
   max-width: 100%;
   max-height: 100%;
   border: none; 
   background: none; 
   padding: 0;
   cursor: pointer; 
+}
+
+.gun-window {
+  display: flex;
+  flex-direction: column; 
+  justify-content: center;
+  align-items: center;
+  position: absolute; /* 浮动窗口 */ 
+  top: 50%; 
+  left: 50%; 
+  transform: translate(-50%, -50%); /* 居中对齐 */  
+  z-index: 100; /* 窗口在其他元素之上 */
+  padding: 20px;
+  background-color: white;
+  border: 1px solid black;
+  font-size: 16px;
+  font-weight: bold;  
+  color: #333; 
+}
+.gun-window button {
+  margin-bottom: 5px;
+  padding: 10px 20px; 
+  font-size: 16px;
+  font-weight: bold;
+  background-color: #007bff;
+  border: none;
+  color: white;
+  border-radius: 4px; /* 边框圆角 */
+}  
+
+.gun-window button:hover {
+  background-color: #ffff99;
+  color: #333;
 }
 
 .opponent-area,
@@ -184,6 +242,7 @@ export default {
   color: white;
   font-size: 16px;
   cursor: pointer;
+  font-weight: bold;
 }
 
 .play-btn:hover,
