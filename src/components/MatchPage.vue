@@ -27,7 +27,7 @@ export default {
         matchTimer: null, // 匹配计时器
         matchSuccessAlert: null, // 匹配成功提示对话框
         matchFailedAlert: null, // 匹配失败提示对话框
-        addRoomDisabled: false // 初始时加入房间按钮未被禁用
+        addRoomDisabled: false // 加入房间按钮可用状态
       };
     },
   methods: {
@@ -78,11 +78,6 @@ export default {
     }
   },
 
-  mounted() {
-    // 添加后端赋值的逻辑
-    this.createRoomID = '123456';
-  },
-
   // 在离开当前页面时清除计时器和所有的对话框
   beforeRouteLeave(to, from, next) {
     clearTimeout(this.matchTimer);
@@ -93,7 +88,13 @@ export default {
       this.matchFailedAlert.close();
     }
     next();
+  },
+
+  mounted() {
+    // 添加后端赋值的逻辑
+    this.createRoomID = '123456';
   }
+
 };
 </script>
 

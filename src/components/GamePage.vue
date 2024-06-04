@@ -51,7 +51,7 @@
       </div>
       <!-- Buttons 区域 -->
       <div class="buttons-area">
-        <button class="play-btn">出牌</button>
+        <button class="play-btn" @click="playCard" :disabled="playCardDisabled">出牌</button>
         <button class="exit-btn" @click="tempEnd">临时退出游戏</button>
       </div>
     </div>
@@ -68,7 +68,8 @@ export default {
       opponentImageUrl: require("@/assets/opponent.jpg"),
       playerImageUrl: require("@/assets/player.jpg"),
       gunImageUrl: require("@/assets/gun.jpg"),
-      showGunWindow: false
+      showGunWindow: false, // 开枪窗口显示状态
+      playCardDisabled: false // 出牌按钮可用状态
     };
   },
   methods: {
@@ -80,18 +81,21 @@ export default {
       // 待添加按钮点击后的逻辑
       this.showGunWindow = !this.showGunWindow;
       console.log('Gun button clicked!');
+      this.playCardDisabled = true;
     },
     // 向对手开枪
     shootOpponent() {
       // 待添加向对手开枪的逻辑
       console.log('向对手开枪');
       this.showGunWindow = false;
+      this.playCardDisabled = false;
     },
     // 向自己开枪
     shootSelf() {
       // 待添加向自己开枪的逻辑
       console.log('向自己开枪');
       this.showGunWindow = false;
+      this.playCardDisabled = false;
     }
   }
 }
@@ -243,6 +247,13 @@ export default {
   font-size: 16px;
   cursor: pointer;
   font-weight: bold;
+}
+
+.play-btn:disabled,
+.exit-btn:disabled {
+  background-color: #dddddd; /* 不可用状态的背景色 */
+  color: #555; /* 不可用状态的文字颜色 */
+  cursor: not-allowed; /* 鼠标指针样式 */
 }
 
 .play-btn:hover,
