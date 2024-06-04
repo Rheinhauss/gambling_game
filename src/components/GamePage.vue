@@ -25,17 +25,23 @@
           <button @click="shootOpponent">对手</button>
           <button @click="shootSelf">自己</button>
         </div>
-        <!-- 抽牌窗口，v-if控制其显示与隐藏 -->  
+        <!-- 抽牌窗口 -->  
         <div v-if="drawCardStatus" class="card-drawer">  
           <p>请在下方道具列表中抽取一个道具：</p>
           <button  
-            v-for="(card, index) in drawableCards"  
+            v-for="(cardName, index) in drawableCards"  
             :key="index"  
-            :class="{ selected: selectedCard === card }"  
-            @click="selectCard(card)"  
+            :class="{ selected: selectedCard === cardName }"  
+            @click="selectDrawCard(cardName)"
+            @mouseover="showTooltip(cardName)"  
+            @mouseleave="hideTooltip"
           >  
-            <!-- 使用了require动态导入图片 -->  
-            <img :src="require(`@/assets/${card}.jpg`)" alt="" />  
+            <!-- require动态导入图片 -->  
+            <!-- <img :src="require(`@/assets/${card}.jpg`)" alt="" />   -->
+            <img :src="cardImage(cardName)" :alt="cardName" />
+            <div v-if="hoveredCard === cardName" class="tooltip">  
+              {{ cardNote(cardName) }}
+            </div>
           </button>
         </div>  
       </div>
@@ -47,6 +53,15 @@
         <div class="player-card">
           <div class="player-card-slot">
             <div class="player-box" v-for="box in 4" :key="box"></div>
+            <button  
+              class="player-box"  
+              v-for="(cardName, index) in playerCards"  
+              :key="index"  
+              :class="{ 'selected': selectedCard === index }"  
+              @click="selectCard(index)"  
+            >
+            <!-- 待修改   -->
+          </button>
           </div>
         </div>
       </div>
@@ -76,6 +91,17 @@
 
 import { ref, watch } from 'vue';
 
+const cardList = [  
+  { name: 'Knife', imageUrl: require('@/assets/Knife.jpg'), note: '手锯：使下一次开枪的伤害翻倍'},
+  { name: 'Cigarette', imageUrl: require('@/assets/Cigarette.jpg'), note: '香烟：回复玩家1点血量'},
+  { name: 'Beer', imageUrl: require('@/assets/Beer.jpg'), note: '啤酒：弹出当前枪膛的1枚子弹'},
+  { name: 'Handcuffs', imageUrl: require('@/assets/Handcuffs.jpg'), note: '手铐：对手下一回合无法行动' },
+  { name: 'MagnifyingGlass', imageUrl: require('@/assets/MagnifyingGlass.jpg'), note:'放大镜：查看当前枪膛内的子弹类型'},
+  { name: 'Reverser', imageUrl: require('@/assets/Reverser.jpg'), note:'逆转器：逆转当前枪膛内的子弹类型'},
+  { name: 'Phone', imageUrl: require('@/assets/Phone.jpg'), note:'电话：若当前枪膛内有x颗子弹，随机查看第2颗子弹到第x颗子弹中的一颗子弹类型'},
+  { name: 'UnknownMedicine', imageUrl: require('@/assets/UnknownMedicine.jpg'), note:'药盒：50%概率回复玩家2点血量，50%概率扣除玩家1点血量'},
+];  
+
 export default {
   name: 'GamePage',
   // {Knife, Cigarette, Beer, Handcuffs, MagnifyingGlass, Reverser, Phone, UnknownMedicine}
@@ -92,6 +118,7 @@ export default {
     const drawCardStatus = ref(false);  
     const drawableCards = ref(['Knife', 'Cigarette', 'Beer']); // 后端传来的待抽取牌列表  
     const selectedCard = ref(null); // 存储被选中的卡牌  
+    const hoveredCard= ref(null); // 存储当前鼠标悬浮的卡牌名称
   
     // 抽牌函数  
     const drawCards = () => {  
@@ -99,8 +126,8 @@ export default {
       togglePlayCardDisabled();
     };  
   
-    // 选择卡牌函数  
-    const selectCard = (card) => {  
+    // 抽牌中选择卡牌函数  
+    const selectDrawCard = (card) => {  
       if (selectedCard.value === card) {  
         // 如果已经选择了该卡牌，则视为抽取
         drawCardStatus.value = false;
@@ -122,18 +149,38 @@ export default {
       }  
     });  
   
+    // 根据卡牌名称获取图片URL  
+    function cardImage(cardName) {  
+      const card = cardList.find(card => card.name === cardName);  
+      return card ? card.imageUrl : ''; // 如果找不到则返回空字符串  
+    }  
+
+    // 根据卡牌名称获取卡牌说明  
+    function cardNote(cardName) {  
+      const card = cardList.find(card => card.name === cardName);  
+      return card ? card.note : '';  
+    }  
+
     // 修改出牌按钮的状态  
     function togglePlayCardDisabled() {  
       playCardDisabled.value = !playCardDisabled.value;  
     }  
   
+    function showTooltip(cardName) {  
+      hoveredCard.value = cardName;    
+    }  
+    function hideTooltip() {  
+      hoveredCard.value = null;  
+    }
+
     // 返回响应式数据
     return {  
       drawCardStatus,  
       drawableCards,  
       selectedCard,  
+      hoveredCard,
       drawCards,  
-      selectCard,  
+      selectDrawCard,  
       playerHealth,  
       opponentHealth,  
       opponentImageUrl,  
@@ -141,7 +188,11 @@ export default {
       gunImageUrl,  
       showGunWindow,  
       playCardDisabled,  
-      togglePlayCardDisabled
+      cardImage,
+      cardNote,
+      togglePlayCardDisabled,
+      showTooltip,
+      hideTooltip
     };
   },
 
@@ -269,6 +320,16 @@ export default {
   /* 被选中的按钮样式：边框加粗并变红 */  
   border: 3px solid red;
 }  
+
+.tooltip {  
+  position: absolute;   
+  z-index: 200;  
+  background: #424242;  
+  color: #fff;  
+  padding: 5px 10px;  
+  border-radius: 5px;  
+  font-size: 16px;
+}
 
 .opponent-area,
 .player-area {
