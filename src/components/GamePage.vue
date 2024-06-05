@@ -33,13 +33,13 @@
             :key="index"  
             :class="{ selected: selectedCard === cardName }"  
             @click="selectDrawCard(cardName)"
-            @mouseover="showTooltip(cardName)"  
+            @mouseover="showTooltip(index)"  
             @mouseleave="hideTooltip"
           >  
             <!-- require动态导入图片 -->  
             <!-- <img :src="require(`@/assets/${card}.jpg`)" alt="" />   -->
             <img :src="cardImage(cardName)" :alt="cardName" />
-            <div v-if="hoveredCard === cardName" class="tooltip">  
+            <div v-if="hoveredCardIndex === index" class="tooltip">  
               {{ cardNote(cardName) }}
             </div>
           </button>
@@ -52,15 +52,19 @@
         </div>
         <div class="player-card">
           <div class="player-card-slot">
-            <div class="player-box" v-for="box in 4" :key="box"></div>
             <button  
               class="player-box"  
-              v-for="(cardName, index) in playerCards"  
+              v-for="(cardName, index) in playerHandCards"  
               :key="index"  
-              :class="{ 'selected': selectedCard === index }"  
-              @click="selectCard(index)"  
+              :class="{ 'selected': selectedCardIndex === index }"  
+              @click="drawCardStatus ? '' : selectCard(index)"  
+              @mouseover="drawCardStatus ? '' : showTooltip(index)"  
+              @mouseleave="drawCardStatus ? '' : hideTooltip" 
             >
-            <!-- 待修改   -->
+            <img :src="cardImage(cardName)" :alt="cardName" />
+            <div v-if="hoveredCardIndex === index && !drawCardStatus" class="tooltip">  
+              {{ cardNote(cardName) }}
+            </div>
           </button>
           </div>
         </div>
@@ -79,7 +83,12 @@
       </div>
       <!-- Buttons 区域 -->
       <div class="buttons-area">
-        <button class="play-btn" @click="playCard" :disabled="playCardDisabled">出牌</button>
+        <button class="play-btn" 
+          @click="playCard" 
+          :disabled="playCardDisabled || selectedCardIndex === null || playerHandCards.length === 0"
+        >
+        出牌
+        </button>
         <button @click="tempEnd">临时退出游戏</button>
         <button @click="drawCards">临时抽牌</button>
       </div>
@@ -89,7 +98,7 @@
 
 <script>
 
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted} from 'vue';
 
 const cardList = [  
   { name: 'Knife', imageUrl: require('@/assets/Knife.jpg'), note: '手锯：使下一次开枪的伤害翻倍'},
@@ -116,9 +125,11 @@ export default {
     const showGunWindow = ref(false); // 开枪窗口显示状态  
     const playCardDisabled = ref(false); // 出牌按钮可用状态  
     const drawCardStatus = ref(false); // 抽牌窗口显示状态
-    const drawableCards = ref(['Knife', 'Cigarette', 'Beer']); // 后端传来的待抽取牌列表  
-    const selectedCard = ref(null); // 存储被选中的卡牌  
-    const hoveredCard= ref(null); // 存储当前鼠标悬浮的卡牌名称
+    const drawableCards = ref([]); // 待抽取牌名称列表  
+    const selectedCard = ref(null); // 抽牌时被选中的卡牌名称  
+    const hoveredCardIndex= ref(null); // 当前鼠标悬浮的卡牌名称
+    const selectedCardIndex = ref(null); // 出牌时被选中的卡牌索引
+    const playerHandCards = ref([]); //当前玩家手牌名称列表
   
     // 抽牌函数  
     const drawCards = () => {  
@@ -148,7 +159,36 @@ export default {
         selectedCard.value = null;  
       }  
     });  
-  
+
+    onMounted(() => {  
+      // 待修改为从后端获取数据
+      drawableCards.value=['Knife', 'Cigarette', 'Beer'];
+      playerHandCards.value = ['Knife','Beer','Knife'];  
+    });  
+
+    // 出牌的选择卡牌函数
+    function selectCard(index) {
+      if (selectedCardIndex.value === index) {
+        selectedCardIndex.value = null; // 重置选择
+      }
+      else if (!drawCardStatus.value){
+        selectedCardIndex.value = index;
+      }
+    }
+
+    // 点击出牌按钮
+    const playCard = () => {  
+      if (selectedCardIndex.value !== null) {  
+        const cardName = playerHandCards.value[selectedCardIndex.value];  
+        console.log(`出牌: ${cardName}, 索引: ${selectedCardIndex.value}`);  
+        // 待添加出牌后的逻辑
+        // 假设出牌后从手牌列表中移除该卡牌（实际逻辑由后端处理）  
+        playerHandCards.value.splice(selectedCardIndex.value, 1);
+        // 重置已选卡牌
+        selectedCardIndex.value = null;  
+      }  
+    };
+
     // 根据卡牌名称获取图片URL  
     function cardImage(cardName) {  
       const card = cardList.find(card => card.name === cardName);  
@@ -166,11 +206,14 @@ export default {
       playCardDisabled.value = !playCardDisabled.value;  
     }  
   
-    function showTooltip(cardName) {  
-      hoveredCard.value = cardName;    
+    // 显示悬浮卡牌说明
+    function showTooltip(index) {  
+      hoveredCardIndex.value = index;  
     }  
+
+    // 隐藏悬浮卡牌说明
     function hideTooltip() {  
-      hoveredCard.value = null;  
+      hoveredCardIndex.value = null;  
     }
 
     // 返回响应式数据
@@ -183,16 +226,20 @@ export default {
       drawCardStatus,  
       drawableCards,  
       selectedCard,  
-      hoveredCard,
+      hoveredCardIndex,
       showGunWindow,  
       playCardDisabled,  
+      playerHandCards,
+      selectedCardIndex,
       cardImage,
       cardNote,
       drawCards,  
-      selectDrawCard,  
+      selectDrawCard,
+      selectCard,
+      playCard,  
       togglePlayCardDisabled,
       showTooltip,
-      hideTooltip
+      hideTooltip,
     };
   },
 
@@ -316,7 +363,8 @@ export default {
   cursor: pointer; 
 }  
   
-.card-drawer button.selected {  
+.card-drawer button.selected,
+.player-box.selected {  
   /* 被选中的按钮样式：边框加粗并变红 */  
   border: 3px solid red;
 }  
@@ -357,20 +405,46 @@ export default {
   padding: 20px;
 }
 
-.opponent-card-slot,
-.player-card-slot {
-  width: 80%;
-  display: flex;
-  justify-content: space-between;
-  border: 3px solid black; 
-  height: 200px; 
-  padding: 10px;
+.opponent-card-slot,  
+.player-card-slot {  
+  width: 80%;  
+  display: flex;  
+  justify-content: flex-start;  
+  border: 3px solid black;  
+  height: 200px;  
+  padding: 10px;  
+  gap: 10px; /* 减小间隙以适应图片大小 */  
+}  
+  
+.opponent-box,  
+.player-box {  
+  width: 23%; 
+  box-sizing: border-box; /* 边框和内边距包含在宽度内 */  
+  border: 1px solid black;  
+  display: flex;  
+  justify-content: center;  
+  align-items: center;  
+  overflow: hidden;  
+  /* 添加一个最小宽度或固定宽度，以确保空框也有相同的宽度 */  
+  min-width: 0; /* 防止 flex 容器收缩到小于内容的最小尺寸 */  
 }
 
-.opponent-box,
-.player-box {
-  width: 20%;
-  border: 1px solid black;
+.opponent-box button, 
+.player-box button {  
+  flex: 1;  
+  width: 100%; 
+  height: 100%;
+  border: none;  
+  background: none;  
+  padding: 0;
+  cursor: pointer;  
+}  
+
+.opponent-box img, 
+.player-box img {  
+  max-width: 100%;  
+  max-height: 100%;  
+  object-fit: contain; 
 }
 
 .status-area {
