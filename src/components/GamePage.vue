@@ -115,7 +115,7 @@ export default {
     const gunImageUrl = ref(require("@/assets/gun.jpg"));  
     const showGunWindow = ref(false); // 开枪窗口显示状态  
     const playCardDisabled = ref(false); // 出牌按钮可用状态  
-    const drawCardStatus = ref(false);  
+    const drawCardStatus = ref(false); // 抽牌窗口显示状态
     const drawableCards = ref(['Knife', 'Cigarette', 'Beer']); // 后端传来的待抽取牌列表  
     const selectedCard = ref(null); // 存储被选中的卡牌  
     const hoveredCard= ref(null); // 存储当前鼠标悬浮的卡牌名称
@@ -175,21 +175,21 @@ export default {
 
     // 返回响应式数据
     return {  
-      drawCardStatus,  
-      drawableCards,  
-      selectedCard,  
-      hoveredCard,
-      drawCards,  
-      selectDrawCard,  
       playerHealth,  
       opponentHealth,  
       opponentImageUrl,  
       playerImageUrl,  
       gunImageUrl,  
+      drawCardStatus,  
+      drawableCards,  
+      selectedCard,  
+      hoveredCard,
       showGunWindow,  
       playCardDisabled,  
       cardImage,
       cardNote,
+      drawCards,  
+      selectDrawCard,  
       togglePlayCardDisabled,
       showTooltip,
       hideTooltip
@@ -254,7 +254,7 @@ export default {
 
 .gun-button {
   flex: 1;
-  max-width: 100%;
+  max-width: 50%;
   max-height: 100%;
   border: none; 
   background: none; 
