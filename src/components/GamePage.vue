@@ -9,7 +9,13 @@
         </div>
         <div class="opponent-card">
           <div class="opponent-card-slot">
-            <div class="opponent-box" v-for="box in 4" :key="box"></div>
+            <div  
+              class="opponent-box"  
+              v-for="(cardName, index) in opponentHandCards"  
+              :key="index"
+            >
+            <img :src="cardImage(cardName)" :alt="cardName" />
+            </div>
           </div>
         </div>
       </div>
@@ -130,6 +136,7 @@ export default {
     const hoveredCardIndex= ref(null); // 当前鼠标悬浮的卡牌名称
     const selectedCardIndex = ref(null); // 出牌时被选中的卡牌索引
     const playerHandCards = ref([]); //当前玩家手牌名称列表
+    const opponentHandCards = ref([]); //对手手牌名称列表
   
     // 抽牌函数  
     const drawCards = () => {  
@@ -163,7 +170,8 @@ export default {
     onMounted(() => {  
       // 待修改为从后端获取数据
       drawableCards.value=['Knife', 'Cigarette', 'Beer'];
-      playerHandCards.value = ['Knife','Beer','Knife'];  
+      playerHandCards.value = ['Knife','Beer','Knife']; 
+      opponentHandCards.value = ['Cigarette','Knife','Beer'];
     });  
 
     // 出牌的选择卡牌函数
@@ -230,6 +238,7 @@ export default {
       showGunWindow,  
       playCardDisabled,  
       playerHandCards,
+      opponentHandCards,
       selectedCardIndex,
       cardImage,
       cardNote,
