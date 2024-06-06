@@ -16,27 +16,39 @@
 </template>
 
 <script>
-  export default {
-    name: 'EndGame',
-    data() {
-      return {
-        isWin : true,
-        roundNum: 1,
-        bulletNum: 1,
-        propNum: 1
-      }
-    },
-    methods: {
-      // 跳转到开始界面
-      goToStartPage() {
-        this.$router.push('/start');
-      },
-      // 关闭窗口
-      closePage() {
-        window.open('about:blank','_self').close();
-      }
-    }
+import { ref} from 'vue';
+import { useRouter } from 'vue-router';
+  
+export default {
+  name: 'EndGame',
+  setup() {
+    const isWin = ref(true);
+    const roundNum = ref(1);
+    const bulletNum = ref(1);
+    const propNum = ref(1);
+  
+    const router = useRouter();
+   
+    // 返回开始页面
+    const goToStartPage = () => {
+      router.push('/start');
+    };  
+  
+    
+    const closePage = () => {
+      window.open('about:blank','_self').close();
+    };
+  
+    return {
+      isWin,
+      roundNum,
+      bulletNum,
+      propNum,
+      goToStartPage,
+      closePage
+    };
   }
+}  
 </script>
 
 /* 界面样式 */

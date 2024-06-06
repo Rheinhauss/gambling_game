@@ -18,83 +18,81 @@
 </template>
 
 <script>
+import { ref, onMounted} from 'vue';
+import { useRouter } from 'vue-router';
+
 export default {
   name: 'MatchPage',
-  data() {
-      return {
-        addRoomID: '', // 加入房间的房间号
-        createRoomID: '123456', // 创建的房间号
-        matchTimer: null, // 匹配计时器
-        matchSuccessAlert: null, // 匹配成功提示对话框
-        matchFailedAlert: null, // 匹配失败提示对话框
-        addRoomDisabled: false // 加入房间按钮可用状态
-      };
-    },
-  methods: {
+  setup() {
+    const addRoomID = ref(''); // 加入的房间号
+    const createRoomID = ref(''); // 创建的房间号
+    const matchTimer = ref(null); // 匹配计时器
+    const addRoomDisabled = ref(false); // 加入房间按钮可用状态
+  
+    const router = useRouter();
+  
     // 随机匹配
-    randomMatch() {
+    const randomMatch = () => {
       alert('匹配中……');
-      // 延迟10s判定匹配结果，需要根据后端再修改
-      this.matchTimer = setTimeout(() => {
-        if (!matchedSuccessfully) { // 假设这里是后端返回的匹配结果
+      matchTimer.value = setTimeout(() => {
+        // 假设 matchedSuccessfully 是从后端获取的
+        const matchedSuccessfully = true; // 异步调用后端API的逻辑
+        if (!matchedSuccessfully) {
           alert('匹配失败！');
-        } else {
-          this.matchSuccessAlert = alert('匹配成功！');
-          // 匹配成功后进行页面跳转到/game
-          this.$router.push('/game');
+        } else {  
+          alert('匹配成功！');
+          router.push('/game');
         }
-      }, 10000); // 10秒的毫秒数
-        // 添加后端匹配的逻辑，并假设匹配成功的标志为 matchedSuccessfully
-        const matchedSuccessfully = true;
-    },
-
+      }, 10000);
+    };
+  
     // 创建房间
-    createRoom(){
-      alert('创建房间成功！房间号为：' + this.createRoomID);
-      this.addRoomDisabled = true;
-      // 创建房间默认为已加入该房间，无法再加入房间，加入房间按钮将不可用
-    },
-
+    const createRoom = () => {
+      alert('创建房间成功！房间号为：' + createRoomID.value);
+      addRoomDisabled.value = true;
+    };
+  
     // 加入房间
-    addRoom() {
-      if (this.addRoomID === '') {
+    const addRoom = () => {
+      if (addRoomID.value === '') {
         alert('请在输入框中输入房间ID再加入房间！');
       } else {
         alert('匹配中……');
-        this.matchTimer = setTimeout(() => {
+        matchTimer.value = setTimeout(() => {
+          // 假设 matchedSuccessfully 是从后端获取的
+          const matchedSuccessfully = true; // 这里应该是一个异步调用后端API的逻辑
           if (!matchedSuccessfully) {
             alert('匹配失败！');
           } else {
-            this.matchSuccessAlert = alert('匹配成功！');
-            this.$router.push('/game');
+            alert('匹配成功！'); // 注意：这里使用原生alert，不考虑matchSuccessAlert
+            router.push('/game');
           }
         }, 10000);
-        // 添加后端匹配的逻辑，并假设匹配成功的标志为 matchedSuccessfully
-        const matchedSuccessfully = true;
       }
-    },
-    goBackStart() {
-      this.$router.push('/start');
-    }
-  },
-
-  // 在离开当前页面时清除计时器和所有的对话框
-  beforeRouteLeave(to, from, next) {
-    clearTimeout(this.matchTimer);
-    if (this.matchSuccessAlert) {
-      this.matchSuccessAlert.close();
-    }
-    if (this.matchFailedAlert) {
-      this.matchFailedAlert.close();
-    }
-    next();
-  },
-
-  mounted() {
-    // 添加后端赋值的逻辑
-    this.createRoomID = '123456';
+    };
+  
+    // 返回开始页面
+    const goBackStart = () => {
+      router.push('/start');
+    };
+  
+    // 组件挂载后执行
+    onMounted(() => {
+      createRoomID.value = '123456';
+      // 这里添加后端赋值的逻辑
+    });
+  
+    // 返回响应式状态和方法
+    return {
+      addRoomID,
+      createRoomID,
+      addRoomDisabled,
+      randomMatch,
+      createRoom,
+      addRoom,
+      goBackStart,
+    };
   }
-
 };
 </script>
 

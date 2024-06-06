@@ -12,11 +12,29 @@
 </template>
 
 <script>
-import { getCurrentInstance, onMounted, onBeforeUnmount } from "vue";
+import { getCurrentInstance, onMounted, onBeforeUnmount} from "vue";
+import { useRouter } from 'vue-router';
 export default {
   name: 'StartGame',
 
   setup() {
+    const router = useRouter();
+  
+    // 在线游戏
+    const goToOnline = () => {
+      router.push('/match');
+    };
+  
+    // 离线游戏
+    const goToOffline = () => {
+      router.push('/game');
+    };
+  
+    // 关闭页面
+    const closePage = () => {
+      window.open('about:blank','_self').close();
+    };
+
     // 获取当前实例对象
     const { proxy } = getCurrentInstance();
     // 定义监听node事件
@@ -34,23 +52,16 @@ export default {
     onBeforeUnmount(() => {
       proxy.$removeSockets(sockets, proxy);
     });
-  },
 
-  methods: {
-    goToOnline() {
-      this.$router.push('/match');
-    },
-    goToOffline() {
-      this.$router.push('/game');
-    },
-    closePage() {
-      window.open('about:blank','_self').close();
-    }
+    return {
+      goToOnline,
+      goToOffline,
+      closePage,
+    };
   }
 }
 </script>
 
-/* 界面样式 */
 <style scoped>
 
 /* 组件区域 */
