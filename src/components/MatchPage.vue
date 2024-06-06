@@ -2,14 +2,16 @@
   <div class="match-page">
     <h1 class="title">匹配游戏</h1>
     <div class="content">
-      <p>随机匹配将加入现有的任意一个房间</p>
+      <!-- <p>随机匹配将加入现有的任意一个房间</p> -->
+      <p>玩家可以选择自己创建房间，或加入好友创建好的房间</p>
       <p>创建房间后可以将房间号分享给游戏好友</p>
       <p>你想加入的好友房间号：<input type="text" v-model="addRoomID" /></p>
     </div>
     <div class="buttons">
-      <button @click="randomMatch">随机匹配</button>
+      <!-- <button @click="randomMatch">随机匹配</button> -->
       <button @click="createRoom">创建房间</button>
       <button @click="addRoom" :disabled="addRoomDisabled">加入房间</button>
+      <button @click="leaveRoom" :disabled="leaveRoomDisabled">离开房间</button>
     </div>
     <div class="start-button">
       <button @click="goBackStart">返回开始页面</button>
@@ -20,55 +22,51 @@
 <script>
 import { ref, onMounted} from 'vue';
 import { useRouter } from 'vue-router';
+import socket from '@/socket/socket';
 
 export default {
   name: 'MatchPage',
   setup() {
     const addRoomID = ref(''); // 加入的房间号
     const createRoomID = ref(''); // 创建的房间号
-    const matchTimer = ref(null); // 匹配计时器
+    const createRoomDisabled = ref(false); // 创建房间按钮可用状态
     const addRoomDisabled = ref(false); // 加入房间按钮可用状态
-  
+    const leaveRoomDisabled = ref(true); // 离开房间按钮可用状态
+    const opponentJoin = ref(false); // 是否有对手加入房间
+
     const router = useRouter();
-  
-    // 随机匹配
-    const randomMatch = () => {
-      alert('匹配中……');
-      matchTimer.value = setTimeout(() => {
-        // 假设 matchedSuccessfully 是从后端获取的
-        const matchedSuccessfully = true; // 异步调用后端API的逻辑
-        if (!matchedSuccessfully) {
-          alert('匹配失败！');
-        } else {  
-          alert('匹配成功！');
-          router.push('/game');
-        }
-      }, 10000);
-    };
   
     // 创建房间
     const createRoom = () => {
-      alert('创建房间成功！房间号为：' + createRoomID.value);
-      addRoomDisabled.value = true;
+      const message = {
+        class: 'lobby',
+        type: 'CreateRoom',
+      };
+      socket.emit('clientMessage', message);
     };
-  
+
     // 加入房间
     const addRoom = () => {
       if (addRoomID.value === '') {
         alert('请在输入框中输入房间ID再加入房间！');
       } else {
-        alert('匹配中……');
-        matchTimer.value = setTimeout(() => {
-          // 假设 matchedSuccessfully 是从后端获取的
-          const matchedSuccessfully = true;
-          if (!matchedSuccessfully) {
-            alert('匹配失败！');
-          } else {
-            alert('匹配成功！'); // 注意：这里使用原生alert，不考虑matchSuccessAlert
-            router.push('/game');
-          }
-        }, 10000);
+        const message = {
+          class: 'lobby',
+          type: 'JoinRoom',
+          roomid: addRoomID.value
+        };
+        socket.emit('clientMessage', message);
+        alert('正在加入房间……');
       }
+    };
+
+    // 离开房间
+    const leaveRoom = () => {
+      const message = {
+        class: 'lobby',
+        type: 'LeaveRoom'
+      };
+      socket.emit('clientMessage', message);
     };
   
     // 返回开始页面
@@ -77,23 +75,111 @@ export default {
     };
 
     onMounted(() => {
-      createRoomID.value = '123456';
-      // 这里添加后端赋值的逻辑
+      // 与后端建立连接握手
+      const handShakeMessage = {
+        class: 'lobby',
+        type: 'Handshake'
+      };
+      socket.emit('clientMessage', handShakeMessage);
+
+      // 监听来自服务器的消息
+      socket.on('serverMessage', (data) => {
+        if (data.class === 'lobby') {
+          // 根据消息类型执行相应操作
+          switch (data.type) {
+            case 'CreateRoomSuccess':
+              handleCreateRoomSuccess(data.roomid);
+              break;
+            case 'OpponentJoin':
+              handleOpponentJoin();
+              break;
+            case 'OpponentLeave':
+              handleOpponentLeave();
+              break;
+            case 'CreateRoomFail':
+              handleCreateRoomFail();
+              break;
+            case 'HandshakeSuccess':
+              handleHandshakeSuccess();
+              break;
+            case 'JoinRoomSuccess':
+              handleJoinRoomSuccess();
+              break;
+            case 'JoinFail':
+              handleJoinFail();
+              break;
+            default:
+              console.log('Unknown message type:', data.type);
+          }
+        }
+      });
     });
-  
-    // 返回响应式状态和方法
+
+    // 房间创建成功
+    const handleCreateRoomSuccess = (roomId) => {
+      console.log('Room created successfully. Room ID:', roomId);
+      createRoomID.value = roomId;
+      addRoomDisabled.value = true;
+      leaveRoomDisabled.value = false;
+      createRoomDisabled.value = true;
+      alert('房间创建成功！房间号为：' + createRoomID.value);
+    };
+
+    // 对手加入房间
+    const handleOpponentJoin = () => {
+      console.log('Opponent joined the room.');
+      opponentJoin.value = true;
+      alert('对手加入房间，即将开始游戏！');
+      router.push('/game');
+    };
+
+    // 对手离开房间
+    const handleOpponentLeave = () => {
+      console.log('Opponent left the room.');
+      opponentJoin.value = false;
+      alert('对手离开房间！');
+    };
+
+    // 房间创建失败
+    const handleCreateRoomFail = () => {
+      console.log('Failed to create room.');
+      alert('创建房间失败，请重试！');
+    };
+
+    // 握手成功
+    const handleHandshakeSuccess = () => {
+      console.log('Handshake successful.');
+    };
+
+    // 加入房间成功
+    const handleJoinRoomSuccess = () => {
+      console.log('Joined room successfully.');
+      alert('加入房间成功，即将开始游戏！');
+      router.push('/game');
+    };
+
+    // 加入房间失败
+    const handleJoinFail = () => {
+      console.log('Failed to join room.');
+      alert('加入房间失败，请重试！');
+    };
+
     return {
       addRoomID,
       createRoomID,
+      createRoomDisabled,
       addRoomDisabled,
-      randomMatch,
+      leaveRoomDisabled,
+      opponentJoin,
       createRoom,
       addRoom,
+      leaveRoom,
       goBackStart,
     };
   }
 };
 </script>
+
 
 /* 界面样式 */
 <style scoped>

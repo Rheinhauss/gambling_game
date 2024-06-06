@@ -12,7 +12,6 @@
 </template>
 
 <script>
-import { getCurrentInstance, onMounted, onBeforeUnmount} from "vue";
 import { useRouter } from 'vue-router';
 
 export default {
@@ -35,24 +34,6 @@ export default {
     const closePage = () => {
       window.open('about:blank','_self').close();
     };
-
-    // 获取当前实例对象
-    const { proxy } = getCurrentInstance();
-    // 定义监听node事件
-    const sockets = {
-      welcome(data) {
-        console.log(data);
-      },
-    };
-    proxy.$socket.io.emit("send", "client send some data to node Serve.");
-    // 注册node事件
-    onMounted(() => {
-      proxy.$addSockets(sockets, proxy);
-    });
-    // 注销node事件
-    onBeforeUnmount(() => {
-      proxy.$removeSockets(sockets, proxy);
-    });
 
     return {
       goToOnline,
