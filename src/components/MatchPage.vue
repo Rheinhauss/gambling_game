@@ -60,7 +60,7 @@ export default {
         alert('匹配中……');
         matchTimer.value = setTimeout(() => {
           // 假设 matchedSuccessfully 是从后端获取的
-          const matchedSuccessfully = true; // 这里应该是一个异步调用后端API的逻辑
+          const matchedSuccessfully = true;
           if (!matchedSuccessfully) {
             alert('匹配失败！');
           } else {
@@ -75,8 +75,7 @@ export default {
     const goBackStart = () => {
       router.push('/start');
     };
-  
-    // 组件挂载后执行
+
     onMounted(() => {
       createRoomID.value = '123456';
       // 这里添加后端赋值的逻辑

@@ -14,6 +14,7 @@
 <script>
 import { getCurrentInstance, onMounted, onBeforeUnmount} from "vue";
 import { useRouter } from 'vue-router';
+
 export default {
   name: 'StartGame',
 

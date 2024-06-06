@@ -5,19 +5,19 @@ import StartGame from './components/StartGame.vue'
 import MatchPage from './components/MatchPage.vue'
 import GamePage from './components/GamePage.vue'
 import EndGame from './components/EndGame.vue'
-// 引入 socket.io
 import VueSocketIO from 'vue-socket.io'
 import { registerSockets, destroySockets } from "./sockets/sockets.js";
 
-// 创建 Socket 连接
+// 创建Socket连接
 const socket = new VueSocketIO({
   debug: false, 
+  // 后端的Socket服务地址
   connection: "http://localhost:8080",
 });
 
 const app = createApp(App)
 
-// 在任意位置获取到 socket 对象
+// 获取Socket对象
 app.config.globalProperties.$socket = socket;
 // 监听事件
 app.config.globalProperties.$addSockets = registerSockets;

@@ -16,16 +16,16 @@
 </template>
 
 <script>
-import { ref} from 'vue';
+import { ref, onMounted} from 'vue';
 import { useRouter } from 'vue-router';
   
 export default {
   name: 'EndGame',
   setup() {
     const isWin = ref(true);
-    const roundNum = ref(1);
-    const bulletNum = ref(1);
-    const propNum = ref(1);
+    const roundNum = ref('');
+    const bulletNum = ref('');
+    const propNum = ref('');
   
     const router = useRouter();
    
@@ -33,12 +33,20 @@ export default {
     const goToStartPage = () => {
       router.push('/start');
     };  
-  
-    
+
+    // 关闭页面
     const closePage = () => {
       window.open('about:blank','_self').close();
     };
   
+    onMounted(() => {
+      isWin.value = true;
+      roundNum.value = 1;
+      bulletNum.value = 1;
+      propNum.value = 1;
+      // 待添加后端赋值的逻辑
+    });
+
     return {
       isWin,
       roundNum,
