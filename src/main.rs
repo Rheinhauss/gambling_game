@@ -46,18 +46,18 @@ async fn main() {
             Ok(ws_stream) => {
                 println!("New connection: {}", peer);
                 // read msg from this connection
-                ws_stream
-                    .for_each(|msg| async move {
-                        println!("Received a message: {:?}", &msg);
-                    })
-                    .await;
-                // tokio::spawn(Connection::handshake(
-                //     ws_stream,
-                //     lobby_client_mq_tx.clone(),
-                //     peer,
-                // ))
-                // .await
-                // .expect("Connection failed.");
+                // ws_stream
+                //     .for_each(|msg| async move {
+                //         println!("Received a message: {:?}", &msg);
+                //     })
+                //     .await;
+                tokio::spawn(Connection::handshake(
+                    ws_stream,
+                    lobby_client_mq_tx.clone(),
+                    peer,
+                ))
+                .await
+                .expect("Connection failed.");
             }
         }
     }
