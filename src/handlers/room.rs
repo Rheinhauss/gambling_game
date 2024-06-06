@@ -46,7 +46,7 @@ impl GameRoom {
     pub fn players(&self) -> (Player, Player) {
         self.players
     }
-    pub async fn listen_game(&mut self){
+    pub async fn listen_game(&mut self) {
         while let Some(event) = self.game_events_rx.recv().await {
             match event {
                 GameEvent::UseItem(player, item) => {
@@ -63,7 +63,6 @@ impl GameRoom {
                 }
             }
         }
-    
     }
 }
 pub struct WaitingRoom {

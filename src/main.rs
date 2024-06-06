@@ -3,7 +3,6 @@ mod handlers;
 mod utils;
 
 use env_logger::Env;
-use futures_util::StreamExt;
 use handlers::connections::Connection;
 use handlers::lobby::{Lobby, LobbyClientEvent};
 use log::{debug, error, info, trace, warn};

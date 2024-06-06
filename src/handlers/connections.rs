@@ -1,10 +1,7 @@
 ﻿use crate::game_logic::game_state::{GameItem, GameStateHidden, GameStateOpen};
 use crate::{game_logic::game_event::GameEvent, utils::player::Player};
-use axum::http::header;
 use futures_util::SinkExt;
 use log::{debug, error, info, trace, warn};
-use quick_protobuf::{BytesReader, MessageRead};
-use serde::Serialize;
 use tokio::net::TcpStream;
 use tokio::sync::mpsc::UnboundedSender;
 use tokio::sync::oneshot;
@@ -17,7 +14,7 @@ use futures_util::stream::StreamExt;
 use futures_util::stream::{SplitSink, SplitStream};
 use serde_json::{json, Value};
 use std::net::SocketAddr;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 enum WsRxMsgType {
     // lobby
@@ -145,7 +142,11 @@ impl Connection {
 
         if let Ok(player) = rx.await {
             info!("Handshake success! player id [{}]", player.id());
-            tokio::spawn(Self::listen_lobby_for_player(player, ws_rx, lobby_client_mq_tx));
+            tokio::spawn(Self::listen_lobby_for_player(
+                player,
+                ws_rx,
+                lobby_client_mq_tx,
+            ));
         } else {
             warn!("Handshake refused!");
         }

@@ -2,23 +2,17 @@
 use super::room::GameRoom;
 use super::room::RoomId;
 use super::room::WaitingRoom;
-use crate::game_logic::game_event;
 use crate::game_logic::game_event::GameEvent;
 use crate::utils::player::Player;
-use crate::utils::player::PlayerId_t;
 use log::info;
 use log::warn;
 use std::collections::btree_map::BTreeMap;
 use std::collections::HashMap;
-use std::f32::consts::E;
-use std::future;
-use std::process::Output;
 use std::sync::Arc;
 // use std::sync::Mutex;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::UnboundedReceiver;
 use tokio::sync::mpsc::UnboundedSender;
-use tokio::sync::oneshot::Sender;
 use tokio::sync::{oneshot, Mutex, RwLock};
 
 pub struct Lobby {
@@ -250,7 +244,6 @@ impl Lobby {
                         } else {
                             p1.clone()
                         };
-                        // drop(lk);
                         match lobby.get_connection(player_to_notify).await {
                             Ok(mut conn) => {
                                 conn.send_opponent_leave().await;
