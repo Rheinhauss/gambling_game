@@ -134,8 +134,8 @@ impl Lobby {
                     r.insert(new_player, new_room.clone());
                 }
                 // add tx to connections
-                self.change_game_event_tx(player1, Some(game_event_tx.clone()));
-                self.change_game_event_tx(new_player, Some(game_event_tx));
+                self.change_game_event_tx(player1, Some(game_event_tx.clone())).await;
+                self.change_game_event_tx(new_player, Some(game_event_tx)).await;
                 Ok(new_room)
             }
         }
