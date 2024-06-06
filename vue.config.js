@@ -2,10 +2,11 @@ const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
   devServer: {
     proxy: {
-      '/socket.io': {
-        // 待添加后端地址
-        target: 'http://localhost:3000',
-        changeOrigin: true
+      '/websocket': {
+        // 待修改为后端 WebSocket 地址
+        target: 'ws://localhost:3000',
+        ws: true,
+        changeOrigin: true,
       }
     }
   }

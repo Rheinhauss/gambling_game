@@ -5,7 +5,7 @@ import StartGame from './components/StartGame.vue'
 import MatchPage from './components/MatchPage.vue'
 import GamePage from './components/GamePage.vue'
 import EndGame from './components/EndGame.vue'
-import './socket/socket'
+import { getSocket } from './socket/socket';
 
 const app = createApp(App)
 
@@ -22,4 +22,5 @@ const router = createRouter({
 })
 
 app.use(router)
+app.config.globalProperties.$socket = getSocket();
 app.mount('#app')

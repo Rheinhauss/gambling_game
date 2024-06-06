@@ -22,7 +22,7 @@
 <script>
 import { ref, onMounted} from 'vue';
 import { useRouter } from 'vue-router';
-import socket from '@/socket/socket';
+import { getSocket } from '@/socket/socket';
 
 export default {
   name: 'MatchPage',
@@ -36,13 +36,16 @@ export default {
 
     const router = useRouter();
   
+    // 获取 WebSocket 对象
+    const socket = getSocket();
+
     // 创建房间
     const createRoom = () => {
       const message = {
         class: 'lobby',
         type: 'CreateRoom',
       };
-      socket.emit('clientMessage', message);
+      socket.send(JSON.stringify(message));
     };
 
     // 加入房间
@@ -55,7 +58,7 @@ export default {
           type: 'JoinRoom',
           roomid: addRoomID.value
         };
-        socket.emit('clientMessage', message);
+        socket.send(JSON.stringify(message));
         alert('正在加入房间……');
       }
     };
@@ -66,7 +69,7 @@ export default {
         class: 'lobby',
         type: 'LeaveRoom'
       };
-      socket.emit('clientMessage', message);
+      socket.send(JSON.stringify(message));
     };
   
     // 返回开始页面
@@ -80,10 +83,12 @@ export default {
         class: 'lobby',
         type: 'Handshake'
       };
-      socket.emit('clientMessage', handShakeMessage);
+      socket.send(JSON.stringify(handShakeMessage));
 
       // 监听来自服务器的消息
-      socket.on('serverMessage', (data) => {
+      socket.addEventListener('message', (event) => {
+        // 解析收到的数据
+        const data = JSON.parse(event.data);
         if (data.class === 'lobby') {
           // 根据消息类型执行相应操作
           switch (data.type) {
