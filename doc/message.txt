@@ -29,8 +29,9 @@
 //Server to Client
 {
   "class": "game",
-  "type": str, // NewRound, NewTurn, UseItem, DrawItemPool
+  "type": str, // NewRound, NewTurn, UseItem, DrawItemPool, GameEnd
   "item_pool": [str...], // 只有DrawItemPool有，道具选择池
+  "win": bool, // 只有GameEnd有，是否胜利
   "open_state":{
     "round": int,
     "turn": int,

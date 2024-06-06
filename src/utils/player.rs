@@ -6,7 +6,9 @@
     },
 };
 
-#[derive(Hash)]
+use serde::Serialize;
+
+#[derive(Hash, Serialize, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct Player {
     id: u32,
 }
@@ -29,38 +31,9 @@ impl Player {
         self.id
     }
 }
-impl PartialOrd for Player {
-    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
-        Some(self.id.cmp(&other.id))
-    }
-}
-impl Ord for Player {
-    fn cmp(&self, other: &Self) -> cmp::Ordering {
-        self.id.cmp(&other.id)
-    }
-}
-impl PartialEq for Player {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
-    }
-}
-impl Eq for Player {}
-
-impl Clone for Player {
-    fn clone(&self) -> Self {
-        Player { id: self.id }
-    }
-}
-impl Copy for Player {}
 
 impl std::fmt::Display for Player {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.id)
-    }
-}
-
-impl std::fmt::Debug for Player {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "[player]{}", self.id)
     }
 }
