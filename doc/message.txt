@@ -1,0 +1,62 @@
+﻿
+//房间相关
+
+//Server to Client
+{
+  "class": "lobby",
+  "type": "CreateRoomSuccess", // OpponentJoin, OpponentLeave, CreateRoomSuccess, CreateRoomFail，HandshakeSuccess, JoinRoomSuccess, JoinRoomFail
+  "roomid": str // 只有CreateRoomSuccess有
+}
+
+
+//Client to Server
+{
+  "class": "lobby",
+  "type": "JoinRoom", // CreateRoom, JoinRoom, Handshake, LeaveRoom
+  "roomid": str
+}
+
+
+//游戏相关
+//Server to Client
+//公开state：
+// 双方血量、道具
+// 轮次、回合、是否当前回合的操作者
+// 上次使用道具信息(或空)：使用者、道具类型、使用结果
+//隐藏state：
+// 枪中子弹数量与类型
+
+//Server to Client
+{
+  "class": "game",
+  "type": str, // NewRound, NewTurn, UseItem, DrawItemPool
+  "item_pool": [str...], // 只有DrawItemPool有，道具选择池
+  "open_state":{
+    "round": int,
+    "turn": int,
+    "hp_self": int,
+    "hp_oppo": int,
+    "playing": bool, // 是否当前回合的操作者
+    "item_self": [str * 4],// knife, cigarette, beer, handcuffs, magnifier, reverser, phone, medicine, empty
+    "item_oppo": [str * 4],
+    "last_use": {
+      "user": str, // self, oppo
+      "item": str, // knife, cigarette, beer, handcuffs, magnifier, reverser, phone, medicine, shoot 注意此处用shoot代表开枪
+      "result": str // ("dummy" or "real") if beer/magnifier/phone/shoot else ""
+    }
+  },
+  "hidden_state":{
+    "num": int, // 枪中子弹数量
+    "bullets": [str...] // "dummy" or "real"
+  }
+}
+
+//Client to Server
+{
+  "class": "game",
+  "type": str, // UseItem, DrawItem, Shoot
+  "draw": str, // 只有DrawItem有，"empty"代表不抽跳过
+  "use": int, // 只有UseItem有，0-3
+  "shoot": bool, // true打自己, false打对手，只有开枪(Shoot)有
+
+}
