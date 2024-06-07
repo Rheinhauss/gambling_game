@@ -110,7 +110,7 @@
 <script>
 
 import { ref, watch, onMounted} from 'vue';
-// import { useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { getSocket } from '@/socket/socket';
 
 const cardList = [
@@ -136,6 +136,7 @@ export default {
     const bulletNum = ref(''); // 枪中子弹数
     const realBulletNum = ref(''); // 枪中实弹数
     const dummyBulletNum = ref(''); // 枪中实弹数
+    const isWin = ref(false); // 游戏胜负
     const opponentImageUrl = ref(require("@/assets/opponent.jpg"));
     const playerImageUrl = ref(require("@/assets/player.jpg"));
     const gunImageUrl = ref(require("@/assets/gun.jpg"));
@@ -150,7 +151,7 @@ export default {
     const opponentHandCards = ref([]); //对手手牌名称列表
     const noteShowStatus = false; // 轮次提示框显示状态
 
-    // const router = useRouter();
+    const router = useRouter();
 
     // 获取 WebSocket 对象
     const socket = getSocket();
@@ -221,9 +222,9 @@ export default {
             // case 'DrawItemPool':
             //   handleDrawItemPool(data);
             //   break;
-            // case 'GameEnd':
-            //   handleGameEnd(data);
-            //   break;
+            case 'GameEnd':
+              endGame(data);
+              break;
           }
         }
       });
@@ -232,6 +233,7 @@ export default {
       // opponentHandCards.value = ['Cigarette','Knife','Beer'];
     });
 
+    // 展示新轮次信息
     const showNewRound = (data) => {
       console.log('New Round:', data);
       roundNum.value = data.hidden_state.round_num;
@@ -269,6 +271,17 @@ export default {
         selectedCard.value = null;
       }
     });
+
+    const endGame = (data) => {
+      console.log('Game End:', data);
+      router.push({
+        path: '/end',
+        query: {
+          isWin: isWin.value,
+          roundNum: roundNum.value
+        }
+      });
+    };
 
     // 根据卡牌名称获取图片URL
     function cardImage(cardName) {
@@ -312,6 +325,7 @@ export default {
       bulletNum,
       realBulletNum,
       dummyBulletNum,
+      isWin,
       opponentImageUrl,
       playerImageUrl,
       gunImageUrl,

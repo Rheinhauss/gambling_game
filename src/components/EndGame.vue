@@ -21,9 +21,9 @@ import { useRouter } from 'vue-router';
   
 export default {
   name: 'EndGame',
-  setup() {
-    const isWin = ref(true);
-    const roundNum = ref('');
+  setup(props) {
+    const isWin = ref(props.isWin);
+    const roundNum = ref(props.roundNum);
     const bulletNum = ref('');
     const propNum = ref('');
   
@@ -40,11 +40,8 @@ export default {
     };
   
     onMounted(() => {
-      isWin.value = true;
-      roundNum.value = 1;
-      bulletNum.value = 1;
-      propNum.value = 1;
-      // 待添加后端赋值的逻辑
+      console.log('isWin:', isWin.value);
+      console.log('roundNum:', roundNum.value);
     });
 
     return {
