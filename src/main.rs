@@ -16,7 +16,7 @@ const PORT: &str = "6444";
 #[tokio::main(flavor = "multi_thread")]
 async fn main() {
     let env = Env::default()
-        .filter_or("MY_LOG_LEVEL", "info")
+        .filter_or("MY_LOG_LEVEL", "debug")
         .write_style_or("MY_LOG_STYLE", "always");
     env_logger::init_from_env(env);
     error!("init");

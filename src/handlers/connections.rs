@@ -83,14 +83,14 @@ impl Connection {
     }
     fn check_rx_msg_type(msg: &serde_json::Value) -> Option<WsRxMsgType> {
         let type_ = msg.get("type")?.as_str()?;
-        match type_ {
-            "CreateRoom" => Some(WsRxMsgType::CreateRoom),
-            "JoinRoom" => Some(WsRxMsgType::JoinRoom),
-            "HandShake" => Some(WsRxMsgType::Handshake),
-            "LeaveRoom" => Some(WsRxMsgType::LeaveRoom),
-            "UseItem" => Some(WsRxMsgType::UseItem),
-            "DrawItem" => Some(WsRxMsgType::DrawItem),
-            "Shoot" => Some(WsRxMsgType::Shoot),
+        match type_.to_lowercase().as_str() {
+            "createroom" => Some(WsRxMsgType::CreateRoom),
+            "joinroom" => Some(WsRxMsgType::JoinRoom),
+            "handshake" => Some(WsRxMsgType::Handshake),
+            "leaveroom" => Some(WsRxMsgType::LeaveRoom),
+            "useitem" => Some(WsRxMsgType::UseItem),
+            "drawitem" => Some(WsRxMsgType::DrawItem),
+            "shoot" => Some(WsRxMsgType::Shoot),
             _ => None,
         }
     }
@@ -126,17 +126,17 @@ impl Connection {
                                 .unwrap();
                         }
                         _ => {
-                            warn!("invalid handshake message!");
+                            warn!("[handshake] invalid handshake message 1!");
                             return;
                         }
                     }
                 }
             } else {
-                warn!("invalid handshake message!");
+                warn!("[handshake] invalid handshake message 2!");
                 return;
             }
         } else {
-            warn!("invalid handshake message!");
+            warn!("[handshake] invalid handshake message 3!");
         }
         warn!("fuck u");
 
@@ -157,7 +157,7 @@ impl Connection {
         mut ws_rx: SplitStream<WebSocketStream<TcpStream>>,
         to_lobby: UnboundedSender<LobbyClientEvent>,
     ) {
-        info!("listening player id [{}]", player);
+        info!("[listen_lobby_for_player] listening player id [{}]", player);
         while let Some(msg) = ws_rx.next().await {
             if let Ok(msg) = msg {
                 if msg.is_text() {
