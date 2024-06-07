@@ -246,13 +246,18 @@ export default {
       // opponentHandCards.value = ['Cigarette','Knife','Beer'];
     });
 
-    // 展示新轮次信息
+    // 新的轮次开始
     const showNewRound = (data) => {
       console.log('New Round:', data);
       roundNum.value = data.hidden_state.round_num;
       bulletNum.value = data.hidden_state.num;
       realBulletNum.value = data.hidden_state.bullets.filter(bullet => bullet === 'real').length;
       dummyBulletNum.value = data.hidden_state.bullets.filter(bullet => bullet === 'dummy').length;
+      // 初始化玩家/对手的血量/手牌
+      playerHealth.value = data.open_state.hp_self;
+      opponentHealth.value = data.open_state.hp_oppo;
+      playerHandCards.value = data.item_self;
+      opponentHandCards.value = data.item_oppo;
       showRoundNote();
     };
 
