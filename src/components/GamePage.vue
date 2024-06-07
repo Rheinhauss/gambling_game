@@ -155,8 +155,8 @@ export default {
     const selectedCardIndex = ref(null); // 出牌时被选中的卡牌索引
     const playerHandCards = ref([]); //当前玩家手牌名称列表
     const opponentHandCards = ref([]); //对手手牌名称列表
-    const noteShowStatus = false; // 轮次提示框显示状态
-    const cardEffetShowStatus = false; // 卡牌效果提示框显示状态
+    const noteShowStatus = ref(false); // 轮次提示框显示状态
+    const cardEffetShowStatus = ref(false); // 卡牌效果提示框显示状态
     const itemUseText = ref(''); // 使用道具的文字提示
     const itemEffetText = ref(''); // 使用道具的效果提示
 
@@ -250,9 +250,6 @@ export default {
           }
         }
       });
-      // drawableCards.value=['Knife', 'Cigarette', 'Beer'];
-      // playerHandCards.value = ['Knife','Beer','Knife'];
-      // opponentHandCards.value = ['Cigarette','Knife','Beer'];
     });
 
     // 新的轮次开始
@@ -302,31 +299,163 @@ export default {
     // 使用卡牌的效果
     const useItem = (data) => {
       console.log('Use Item:', data);
-      if(data.open_state.playing === true) {
+      if(data.last_use.user === 'self') {
         playerUseItem(data);
       }
-      else {
+      else if(data.last_use.user === 'oppo'){
         opponentUseItem(data);
       }
     };
 
     const playerUseItem = (data) => {
       console.log('Player Use Item:', data);
-
+      let beerBulletType = '';
+      let glassBulletType = '';
+      let phoneBulletType = '';
+      let phoneBulletID = '';
+      let medicineHP = '';
+      let shootBulletType = '';
+      cardEffetShowStatus.value = true;
+      switch(data.last_use.item)
+      {
+        case 'knife':
+          itemUseText.value = `你使用了手锯！`;
+          itemEffetText.value = `下一次开枪的伤害将会翻倍`;
+          break;
+        case 'cigarette':
+          itemUseText.value = `你使用了香烟！`;
+          itemEffetText.value = `回复了1点血量`;
+          break;
+        case 'beer':
+          itemUseText.value = `你使用了啤酒！`;
+          if (data.last_use.result === 'dummy') {
+            beerBulletType = '哑弹';
+          } else if (data.last_use.result === 'real') {
+            beerBulletType = '实弹';
+          }
+          itemEffetText.value = `弹出了当前枪膛的1枚子弹：${beerBulletType}`;
+          break;
+        case 'handcuffs':
+          itemUseText.value = `你使用了手铐！`;
+          itemEffetText.value = `对手下一回合无法行动`;
+          break;
+        case 'magnifier':
+          itemUseText.value = `你使用了放大镜！`;
+          if (data.last_use.result === 'dummy') {
+            beerBulletType = '哑弹';
+          } else if (data.last_use.result === 'real') {
+            beerBulletType = '实弹';
+          }
+          itemEffetText.value = `查看当前枪膛内的子弹类型：${glassBulletType}`;
+          break;
+        case 'reverser':
+          itemUseText.value = `你使用了逆转器！`;
+          itemEffetText.value = `逆转当前枪膛内的子弹类型`;
+          break;
+        case 'phone':
+          itemUseText.value = `你使用了电话！`;
+          // 待添加第几颗子弹
+          if (data.last_use.result === 'dummy') {
+            phoneBulletType = '哑弹';
+          } else if (data.last_use.result === 'real') {
+            phoneBulletType = '实弹';
+          }
+          itemEffetText.value = `查看第${phoneBulletID}颗子弹类型：${phoneBulletType}`;
+          break;
+        case 'medicine':
+          itemUseText.value = `你使用了药盒！`;
+          if (medicineHP == 2) {
+            itemEffetText.value = `回复了2点血量`;
+          } else if (medicineHP == -1) {
+            itemEffetText.value = `扣除了1点血量`;
+          }
+          break;
+        case 'shoot':
+          itemUseText.value = `你开枪了！`;
+          if (data.last_use.result === 'dummy') {
+            shootBulletType = '哑弹';
+          } else if (data.last_use.result === 'real') {
+            shootBulletType = '实弹';
+          }
+          itemEffetText.value = `枪中是：${shootBulletType}`;
+          break;
+      }
       // 更新玩家/对手的血量/手牌
       playerHealth.value = data.open_state.hp_self;
       opponentHealth.value = data.open_state.hp_oppo;
       playerHandCards.value = data.item_self;
       opponentHandCards.value = data.item_oppo;
+      setTimeout(() => {
+        cardEffetShowStatus.value = false;
+      }, 2000);
     };
 
     const opponentUseItem = (data) => {
       console.log('Opponent Use Item:', data);
+      let beerBulletType = '';
+      let medicineHP = '';
+      let shootBulletType = '';
+      cardEffetShowStatus.value = true;
+      switch(data.last_use.item)
+      {
+        case 'knife':
+          itemUseText.value = `对手使用了手锯！`;
+          itemEffetText.value = `下一次开枪的伤害将会翻倍`;
+          break;
+        case 'cigarette':
+          itemUseText.value = `对手使用了香烟！`;
+          itemEffetText.value = `对手回复了1点血量`;
+          break;
+        case 'beer':
+          itemUseText.value = `对手使用了啤酒！`;
+          if (data.last_use.result === 'dummy') {
+            beerBulletType = '哑弹';
+          } else if (data.last_use.result === 'real') {
+            beerBulletType = '实弹';
+          }
+          itemEffetText.value = `弹出了当前枪膛的1枚子弹：${beerBulletType}`;
+          break;
+        case 'handcuffs':
+          itemUseText.value = `对手使用了手铐！`;
+          itemEffetText.value = `你下一回合无法行动`;
+          break;
+        case 'magnifier':
+          itemUseText.value = `对手使用了放大镜！`;
+          itemEffetText.value = `查看当前枪膛内的子弹类型`;
+          break;
+        case 'reverser':
+          itemUseText.value = `对手使用了逆转器！`;
+          itemEffetText.value = `逆转当前枪膛内的子弹类型`;
+          break;
+        case 'phone':
+          itemUseText.value = `对手使用了电话！`;
+          break;
+        case 'medicine':
+          itemUseText.value = `对手使用了药盒！`;
+          if (medicineHP == 2) {
+            itemEffetText.value = `回复了2点血量`;
+          } else if (medicineHP == -1) {
+            itemEffetText.value = `扣除了1点血量`;
+          }
+          break;
+        case 'shoot':
+          itemUseText.value = `对手开枪了！`;
+          if (data.last_use.result === 'dummy') {
+            shootBulletType = '哑弹';
+          } else if (data.last_use.result === 'real') {
+            shootBulletType = '实弹';
+          }
+          itemEffetText.value = `枪中是：${shootBulletType}`;
+          break;
+      }
       // 更新玩家/对手的血量/手牌
       playerHealth.value = data.open_state.hp_self;
       opponentHealth.value = data.open_state.hp_oppo;
       playerHandCards.value = data.item_self;
       opponentHandCards.value = data.item_oppo;
+      setTimeout(() => {
+        cardEffetShowStatus.value = false;
+      }, 2000);
     };
 
     // 抽取卡牌池中的卡牌
