@@ -168,7 +168,12 @@ export default {
       console.log('向对手开枪');
       showGunWindow.value = false;
       playCardDisabled.value = false;
-      // 待添加向对手开枪的逻辑
+      const message = {
+          class: 'game',
+          type: 'shoot',
+          shoot: false
+      };
+      socket.send(JSON.stringify(message));
     };
   
     // 向自己开枪
@@ -176,7 +181,12 @@ export default {
       console.log('向自己开枪');
       showGunWindow.value = false;
       playCardDisabled.value = false;
-      // 待添加向自己开枪的逻辑
+      const message = {
+          class: 'game',
+          type: 'shoot',
+          shoot: true
+      };
+      socket.send(JSON.stringify(message));
     };
 
     // 出牌的选择卡牌函数
@@ -194,9 +204,12 @@ export default {
       if (selectedCardIndex.value !== null) {
         const cardName = playerHandCards.value[selectedCardIndex.value];
         console.log(`出牌: ${cardName}, 索引: ${selectedCardIndex.value}`);
-        // 待添加出牌后的逻辑
-        // 假设出牌后从手牌列表中移除该卡牌（实际逻辑由后端处理）
-        playerHandCards.value.splice(selectedCardIndex.value, 1);
+        const message = {
+          class: 'game',
+          type: 'UseItem',
+          use: selectedCardIndex.value
+        };
+        socket.send(JSON.stringify(message));
         // 重置已选卡牌
         selectedCardIndex.value = null;
       }
@@ -255,8 +268,13 @@ export default {
         // 如果已经选择了该卡牌，则视为抽取
         drawCardStatus.value = false;
         togglePlayCardDisabled();
-        // 待添加抽取卡牌逻辑
-        console.log('抽取了卡牌:', card);
+        const message = {
+          class: 'game',
+          type: 'draw',
+          draw: selectedCard.value
+        };
+        socket.send(JSON.stringify(message));
+        console.log('Draw card:', card);
         selectedCard.value = null; // 重置选择
       }
       else {
