@@ -49,7 +49,12 @@
               {{ cardNote(cardName) }}
             </div>
           </button>
-        </div>  
+        </div>
+        <!-- 新轮次通知窗口 -->
+        <div v-if="noteShowStatus" class="notification">
+          <p>第{{ roundNum }}轮游戏开始！</p>
+          <p>枪中有{{ bulletNum }}颗子弹：其中{{ realBulletNum }}颗实弹，{{ dummyBulletNum }}颗哑弹</p>
+        </div>
       </div>
       <!-- Player 区域 -->
       <div class="player-area">
@@ -95,8 +100,8 @@
         >
         出牌
         </button>
-        <button @click="tempEnd">临时退出游戏</button>
-        <button @click="drawCards">临时抽牌</button>
+        <!-- <button @click="tempEnd">临时退出游戏</button>
+        <button @click="drawCards">临时抽牌</button> -->
       </div>
     </div>
   </div>
@@ -105,9 +110,10 @@
 <script>
 
 import { ref, watch, onMounted} from 'vue';
-import { useRouter } from 'vue-router';
+// import { useRouter } from 'vue-router';
+import { getSocket } from '@/socket/socket';
 
-const cardList = [  
+const cardList = [
   { name: 'Knife', imageUrl: require('@/assets/Knife.jpg'), note: '手锯：使下一次开枪的伤害翻倍'},
   { name: 'Cigarette', imageUrl: require('@/assets/Cigarette.jpg'), note: '香烟：回复玩家1点血量'},
   { name: 'Beer', imageUrl: require('@/assets/Beer.jpg'), note: '啤酒：弹出当前枪膛的1枚子弹'},
@@ -116,7 +122,7 @@ const cardList = [
   { name: 'Reverser', imageUrl: require('@/assets/Reverser.jpg'), note:'逆转器：逆转当前枪膛内的子弹类型'},
   { name: 'Phone', imageUrl: require('@/assets/Phone.jpg'), note:'电话：若当前枪膛内有x颗子弹，随机查看第2颗子弹到第x颗子弹中的一颗子弹类型'},
   { name: 'UnknownMedicine', imageUrl: require('@/assets/UnknownMedicine.jpg'), note:'药盒：50%概率回复玩家2点血量，50%概率扣除玩家1点血量'},
-];  
+];
 
 export default {
   name: 'GamePage',
@@ -124,8 +130,12 @@ export default {
 
   setup() {
     // 使用 ref() 创建响应式引用
-    const playerHealth = ref(1);
-    const opponentHealth = ref(1);
+    const playerHealth = ref(''); // 玩家血量
+    const opponentHealth = ref(''); // 对手血量
+    const roundNum = ref(''); // 本轮游戏回合数
+    const bulletNum = ref(''); // 枪中子弹数
+    const realBulletNum = ref(''); // 枪中实弹数
+    const dummyBulletNum = ref(''); // 枪中实弹数
     const opponentImageUrl = ref(require("@/assets/opponent.jpg"));
     const playerImageUrl = ref(require("@/assets/player.jpg"));
     const gunImageUrl = ref(require("@/assets/gun.jpg"));
@@ -138,13 +148,12 @@ export default {
     const selectedCardIndex = ref(null); // 出牌时被选中的卡牌索引
     const playerHandCards = ref([]); //当前玩家手牌名称列表
     const opponentHandCards = ref([]); //对手手牌名称列表
+    const noteShowStatus = false; // 轮次提示框显示状态
 
-    const router = useRouter();
+    // const router = useRouter();
 
-    // 临时退出游戏
-    const tempEnd = () => {
-      router.push('/end');
-    };
+    // 获取 WebSocket 对象
+    const socket = getSocket();
   
     // 点击手枪按钮
     const gunButtonClick = () => {
@@ -167,6 +176,69 @@ export default {
       showGunWindow.value = false;
       playCardDisabled.value = false;
       // 待添加向自己开枪的逻辑
+    };
+
+    // 出牌的选择卡牌函数
+    function selectCard(index) {
+      if (selectedCardIndex.value === index) {
+        selectedCardIndex.value = null; // 重置选择
+      }
+      else if (!drawCardStatus.value){
+        selectedCardIndex.value = index;
+      }
+    }
+
+    // 点击出牌按钮
+    const playCard = () => {
+      if (selectedCardIndex.value !== null) {
+        const cardName = playerHandCards.value[selectedCardIndex.value];
+        console.log(`出牌: ${cardName}, 索引: ${selectedCardIndex.value}`);
+        // 待添加出牌后的逻辑
+        // 假设出牌后从手牌列表中移除该卡牌（实际逻辑由后端处理）
+        playerHandCards.value.splice(selectedCardIndex.value, 1);
+        // 重置已选卡牌
+        selectedCardIndex.value = null;
+      }
+    };
+
+    onMounted(() => {
+      // 监听来自服务器的消息
+      socket.addEventListener('message', (event) => {
+        // 解析收到的数据
+        const data = JSON.parse(event.data);
+        if (data.class === 'game') {
+          // 根据消息类型执行相应操作
+          switch (data.type) {// NewRound, NewTurn, UseItem, DrawItemPool, GameEnd
+            case 'NewRound':
+              showNewRound(data);
+              break;
+            // case 'NewTurn':
+            //   handleNewTurn(data);
+            //   break;
+            // case 'UseItem':
+            //   handleUseItem(data);
+            //   break;
+            // case 'DrawItemPool':
+            //   handleDrawItemPool(data);
+            //   break;
+            // case 'GameEnd':
+            //   handleGameEnd(data);
+            //   break;
+          }
+        }
+      });
+      // drawableCards.value=['Knife', 'Cigarette', 'Beer'];
+      // playerHandCards.value = ['Knife','Beer','Knife'];
+      // opponentHandCards.value = ['Cigarette','Knife','Beer'];
+    });
+
+    const showNewRound = (data) => {
+      console.log('New Round:', data);
+      roundNum.value = data.hidden_state.round_num;
+      bulletNum.value = data.hidden_state.num;
+      realBulletNum.value = data.hidden_state.bullets.filter(bullet => bullet === 'real').length;
+      dummyBulletNum.value = data.hidden_state.bullets.filter(bullet => bullet === 'dummy').length;
+      showRoundNote();
     };
 
     // 抽牌函数
@@ -198,36 +270,6 @@ export default {
       }
     });
 
-    onMounted(() => {
-      // 待修改为从后端获取数据
-      drawableCards.value=['Knife', 'Cigarette', 'Beer'];
-      playerHandCards.value = ['Knife','Beer','Knife'];
-      opponentHandCards.value = ['Cigarette','Knife','Beer'];
-    });
-
-    // 出牌的选择卡牌函数
-    function selectCard(index) {
-      if (selectedCardIndex.value === index) {
-        selectedCardIndex.value = null; // 重置选择
-      }
-      else if (!drawCardStatus.value){
-        selectedCardIndex.value = index;
-      }
-    }
-
-    // 点击出牌按钮
-    const playCard = () => {
-      if (selectedCardIndex.value !== null) {
-        const cardName = playerHandCards.value[selectedCardIndex.value];
-        console.log(`出牌: ${cardName}, 索引: ${selectedCardIndex.value}`);
-        // 待添加出牌后的逻辑
-        // 假设出牌后从手牌列表中移除该卡牌（实际逻辑由后端处理）
-        playerHandCards.value.splice(selectedCardIndex.value, 1);
-        // 重置已选卡牌
-        selectedCardIndex.value = null;
-      }
-    };
-
     // 根据卡牌名称获取图片URL
     function cardImage(cardName) {
       const card = cardList.find(card => card.name === cardName);
@@ -255,9 +297,21 @@ export default {
       hoveredCardIndex.value = null;
     }
 
+    // 控制轮次提示框显示2s后隐藏
+    const showRoundNote = () => {
+      noteShowStatus.value = true;
+      setTimeout(() => {
+        noteShowStatus.value = false;
+      }, 2000);
+    };
+
     return {
       playerHealth,
       opponentHealth,
+      roundNum,
+      bulletNum,
+      realBulletNum,
+      dummyBulletNum,
       opponentImageUrl,
       playerImageUrl,
       gunImageUrl,
@@ -270,7 +324,7 @@ export default {
       playerHandCards,
       opponentHandCards,
       selectedCardIndex,
-      tempEnd,
+      noteShowStatus,
       gunButtonClick,
       shootOpponent,
       shootSelf,
@@ -283,6 +337,7 @@ export default {
       togglePlayCardDisabled,
       showTooltip,
       hideTooltip,
+      showRoundNote,
     };
   }
 }
@@ -507,6 +562,20 @@ export default {
 
 .play-btn:hover {
   background-color: #ffff99;
+  color: #333;
+}
+.notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  font-size: 16px;
+  font-weight: bold;
   color: #333;
 }
 
