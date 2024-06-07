@@ -22,7 +22,7 @@
       <!-- Gun 区域 -->
       <div class="gun-area">
         <!-- 开枪按钮 -->
-        <button class="gun-button" @click="gunButtonClick">
+        <button class="gun-button" @click="gunButtonClick" :disabled="gunButtonDisabled">
           <img :src="gunImageUrl" alt="Gun Button">
         </button>
         <!-- 开枪窗口 -->
@@ -41,6 +41,7 @@
             @click="selectDrawCard(cardName)"
             @mouseover="showTooltip(index)"
             @mouseleave="hideTooltip"
+            :disabled="cardButtonDisabled"
           >  
             <!-- require动态导入图片 -->  
             <!-- <img :src="require(`@/assets/${card}.jpg`)" alt="" />   -->
@@ -54,6 +55,11 @@
         <div v-if="noteShowStatus" class="notification">
           <p>第{{ roundNum }}轮游戏开始！</p>
           <p>枪中有{{ bulletNum }}颗子弹：其中{{ realBulletNum }}颗实弹，{{ dummyBulletNum }}颗哑弹</p>
+        </div>
+        <!-- 卡牌效果通知窗口 -->
+        <div v-if="cardEffetShowStatus" class="notification">
+          <p >{{ itemUseText }}</p>
+          <p >{{ itemEffetText }}</p>
         </div>
       </div>
       <!-- Player 区域 -->
@@ -100,8 +106,6 @@
         >
         出牌
         </button>
-        <!-- <button @click="tempEnd">临时退出游戏</button>
-        <button @click="drawCards">临时抽牌</button> -->
       </div>
     </div>
   </div>
@@ -114,14 +118,14 @@ import { useRouter } from 'vue-router';
 import { getSocket } from '@/socket/socket';
 
 const cardList = [
-  { name: 'Knife', imageUrl: require('@/assets/knife.jpg'), note: '手锯：使下一次开枪的伤害翻倍'},
-  { name: 'Cigarette', imageUrl: require('@/assets/cigarette.jpg'), note: '香烟：回复玩家1点血量'},
-  { name: 'Beer', imageUrl: require('@/assets/beer.jpg'), note: '啤酒：弹出当前枪膛的1枚子弹'},
-  { name: 'Handcuffs', imageUrl: require('@/assets/handcuffs.jpg'), note: '手铐：对手下一回合无法行动' },
-  { name: 'MagnifyingGlass', imageUrl: require('@/assets/magnifyingGlass.jpg'), note:'放大镜：查看当前枪膛内的子弹类型'},
-  { name: 'Reverser', imageUrl: require('@/assets/reverser.jpg'), note:'逆转器：逆转当前枪膛内的子弹类型'},
-  { name: 'Phone', imageUrl: require('@/assets/phone.jpg'), note:'电话：若当前枪膛内有x颗子弹，随机查看第2颗子弹到第x颗子弹中的一颗子弹类型'},
-  { name: 'UnknownMedicine', imageUrl: require('@/assets/unknownMedicine.jpg'), note:'药盒：50%概率回复玩家2点血量，50%概率扣除玩家1点血量'},
+  { name: 'Knife', call: '手锯', imageUrl: require('@/assets/knife.jpg'), note: '手锯：使下一次开枪的伤害翻倍'},
+  { name: 'Cigarette', call: '香烟', imageUrl: require('@/assets/cigarette.jpg'), note: '香烟：回复玩家1点血量'},
+  { name: 'Beer', call: '啤酒', imageUrl: require('@/assets/beer.jpg'), note: '啤酒：弹出当前枪膛的1枚子弹'},
+  { name: 'Handcuffs', call: '手铐', imageUrl: require('@/assets/handcuffs.jpg'), note: '手铐：对手下一回合无法行动' },
+  { name: 'MagnifyingGlass', call: '放大镜', imageUrl: require('@/assets/magnifyingGlass.jpg'), note:'放大镜：查看当前枪膛内的子弹类型'},
+  { name: 'Reverser', call: '逆转器', imageUrl: require('@/assets/reverser.jpg'), note:'逆转器：逆转当前枪膛内的子弹类型'},
+  { name: 'Phone', call: '电话', imageUrl: require('@/assets/phone.jpg'), note:'电话：若当前枪膛内有x颗子弹，随机查看第2颗子弹到第x颗子弹中的一颗子弹类型'},
+  { name: 'UnknownMedicine', call: '药盒', imageUrl: require('@/assets/unknownMedicine.jpg'), note:'药盒：50%概率回复玩家2点血量，50%概率扣除玩家1点血量'},
 ];
 
 export default {
@@ -140,8 +144,10 @@ export default {
     const opponentImageUrl = ref(require("@/assets/opponent.jpg"));
     const playerImageUrl = ref(require("@/assets/player.jpg"));
     const gunImageUrl = ref(require("@/assets/gun.jpg"));
-    const showGunWindow = ref(false); // 开枪窗口显示状态
+    const gunButtonDisabled = ref(false); // 开枪按钮可用状态
     const playCardDisabled = ref(false); // 出牌按钮可用状态
+    const cardButtonDisabled = ref(false); // 手牌按钮可用状态
+    const showGunWindow = ref(false); // 开枪窗口显示状态
     const drawCardStatus = ref(false); // 抽牌窗口显示状态
     const drawableCards = ref([]); // 待抽取牌名称列表
     const selectedCard = ref(null); // 抽牌时被选中的卡牌名称
@@ -150,6 +156,9 @@ export default {
     const playerHandCards = ref([]); //当前玩家手牌名称列表
     const opponentHandCards = ref([]); //对手手牌名称列表
     const noteShowStatus = false; // 轮次提示框显示状态
+    const cardEffetShowStatus = false; // 卡牌效果提示框显示状态
+    const itemUseText = ref(''); // 使用道具的文字提示
+    const itemEffetText = ref(''); // 使用道具的效果提示
 
     const router = useRouter();
 
@@ -226,15 +235,15 @@ export default {
             case 'NewRound':
               showNewRound(data);
               break;
-            // case 'NewTurn':
-            //   handleNewTurn(data);
-            //   break;
-            // case 'UseItem':
-            //   handleUseItem(data);
-            //   break;
-            // case 'DrawItemPool':
-            //   handleDrawItemPool(data);
-            //   break;
+            case 'NewTurn':
+              handleNewTurn(data);
+              break;
+            case 'UseItem':
+              useItem(data);
+              break;
+            case 'DrawItemPool':
+              handleDrawItem(data);
+              break;
             case 'GameEnd':
               endGame(data);
               break;
@@ -249,7 +258,7 @@ export default {
     // 新的轮次开始
     const showNewRound = (data) => {
       console.log('New Round:', data);
-      roundNum.value = data.hidden_state.round_num;
+      roundNum.value = data.open_state.round;
       bulletNum.value = data.hidden_state.num;
       realBulletNum.value = data.hidden_state.bullets.filter(bullet => bullet === 'real').length;
       dummyBulletNum.value = data.hidden_state.bullets.filter(bullet => bullet === 'dummy').length;
@@ -259,6 +268,75 @@ export default {
       playerHandCards.value = data.item_self;
       opponentHandCards.value = data.item_oppo;
       showRoundNote();
+    };
+
+    const handleNewTurn = (data) => {
+      console.log('New Turn:', data);
+      // 更新玩家/对手的血量/手牌
+      playerHealth.value = data.open_state.hp_self;
+      opponentHealth.value = data.open_state.hp_oppo;
+      playerHandCards.value = data.item_self;
+      opponentHandCards.value = data.item_oppo;
+      // 判断不同玩家的回合决定按钮操作的可用性
+      if(data.open_state.playing === true) {
+        playerTurn(data);
+      } else {
+        opponentTurn(data);
+      }
+    };
+
+    const playerTurn = (data) => {
+      console.log('Player Turn:', data);
+      playCardDisabled.value = false;
+      gunButtonDisabled.value = false;
+      cardButtonDisabled.value = false;
+    };
+
+    const opponentTurn = (data) => {
+      console.log('Opponent Turn:', data);
+      playCardDisabled.value = true;
+      gunButtonDisabled.value = true;
+      cardButtonDisabled.value = true;
+    };
+
+    // 使用卡牌的效果
+    const useItem = (data) => {
+      console.log('Use Item:', data);
+      if(data.open_state.playing === true) {
+        playerUseItem(data);
+      }
+      else {
+        opponentUseItem(data);
+      }
+    };
+
+    const playerUseItem = (data) => {
+      console.log('Player Use Item:', data);
+
+      // 更新玩家/对手的血量/手牌
+      playerHealth.value = data.open_state.hp_self;
+      opponentHealth.value = data.open_state.hp_oppo;
+      playerHandCards.value = data.item_self;
+      opponentHandCards.value = data.item_oppo;
+    };
+
+    const opponentUseItem = (data) => {
+      console.log('Opponent Use Item:', data);
+      // 更新玩家/对手的血量/手牌
+      playerHealth.value = data.open_state.hp_self;
+      opponentHealth.value = data.open_state.hp_oppo;
+      playerHandCards.value = data.item_self;
+      opponentHandCards.value = data.item_oppo;
+    };
+
+    // 抽取卡牌池中的卡牌
+    const handleDrawItem = (data) => {
+      console.log('Draw Item:', data);
+      if(data.open_state.playing === true) {
+        drawableCards.value = data.item_pool;
+        drawCards();
+      }
+      // 待添加更新手牌
     };
 
     // 抽牌函数
@@ -297,6 +375,8 @@ export default {
 
     const endGame = (data) => {
       console.log('Game End:', data);
+      isWin.value = data.hidden_state.win;
+      roundNum.value = data.open_state.round;
       router.push({
         path: '/end',
         query: {
@@ -357,11 +437,16 @@ export default {
       selectedCard,
       hoveredCardIndex,
       showGunWindow,
+      gunButtonDisabled,
       playCardDisabled,
+      cardButtonDisabled,
       playerHandCards,
       opponentHandCards,
       selectedCardIndex,
       noteShowStatus,
+      cardEffetShowStatus,
+      itemUseText,
+      itemEffetText,
       gunButtonClick,
       shootOpponent,
       shootSelf,
@@ -375,6 +460,11 @@ export default {
       showTooltip,
       hideTooltip,
       showRoundNote,
+      showNewRound,
+      handleNewTurn,
+      useItem,
+      handleDrawItem,
+      endGame,
     };
   }
 }
