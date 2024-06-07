@@ -109,12 +109,12 @@ import { useRouter } from 'vue-router';
 
 const cardList = [  
   { name: 'Knife', imageUrl: require('@/assets/Knife.jpg'), note: '手锯：使下一次开枪的伤害翻倍'},
-  { name: 'Cigarette', imageUrl: require('@/assets/Cigarette.jpg'), note: '香烟：回复玩家1点血量'},
-  { name: 'Beer', imageUrl: require('@/assets/Beer.jpg'), note: '啤酒：弹出当前枪膛的1枚子弹'},
-  { name: 'Handcuffs', imageUrl: require('@/assets/Handcuffs.jpg'), note: '手铐：对手下一回合无法行动' },
+  { name: 'Cigarette', imageUrl: require('@/assets/cigarette.jpg'), note: '香烟：回复玩家1点血量'},
+  { name: 'Beer', imageUrl: require('@/assets/beer.jpg'), note: '啤酒：弹出当前枪膛的1枚子弹'},
+  { name: 'Handcuffs', imageUrl: require('@/assets/handcuffs.jpg'), note: '手铐：对手下一回合无法行动' },
   { name: 'MagnifyingGlass', imageUrl: require('@/assets/MagnifyingGlass.jpg'), note:'放大镜：查看当前枪膛内的子弹类型'},
-  { name: 'Reverser', imageUrl: require('@/assets/Reverser.jpg'), note:'逆转器：逆转当前枪膛内的子弹类型'},
-  { name: 'Phone', imageUrl: require('@/assets/Phone.jpg'), note:'电话：若当前枪膛内有x颗子弹，随机查看第2颗子弹到第x颗子弹中的一颗子弹类型'},
+  { name: 'Reverser', imageUrl: require('@/assets/reverser.jpg'), note:'逆转器：逆转当前枪膛内的子弹类型'},
+  { name: 'Phone', imageUrl: require('@/assets/phone.jpg'), note:'电话：若当前枪膛内有x颗子弹，随机查看第2颗子弹到第x颗子弹中的一颗子弹类型'},
   { name: 'UnknownMedicine', imageUrl: require('@/assets/UnknownMedicine.jpg'), note:'药盒：50%概率回复玩家2点血量，50%概率扣除玩家1点血量'},
 ];  
 

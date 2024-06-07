@@ -2,7 +2,7 @@ let socket = null;
 
 // 创建 WebSocket 连接
 function createWebSocketConnection() {
-  const url = 'ws://localhost:3000'; // 待修改为后端 WebSocket 地址
+  const url = 'ws://localhost:6444'; // 待修改为后端 WebSocket 地址
   socket = new WebSocket(url);
 
   // 监听 WebSocket 连接建立事件
