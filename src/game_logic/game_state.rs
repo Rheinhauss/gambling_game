@@ -1,16 +1,28 @@
-﻿use crate::utils::player::Player;
+﻿use crate::utils::player::*;
 use log::{debug, error, info, trace, warn};
 use serde::{Deserialize, Serialize};
 use std::collections::btree_map::BTreeMap;
 use std::sync::Arc;
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Stage{
+    GameStart,
+    DrawItem(GameItem, GameItem, GameItem),
+    Act(Player),
+    Restricted(Player),
+    TurnCheck,
+    GameOver,
+}
 
 pub struct GameState {
     players: (Player, Player),
     items: BTreeMap<Player, [GameItem; 4]>, // 双方道具、血量, 只有两个人的
     hp: BTreeMap<Player, i32>,              // 双方血量， 只有两个人的
     revolver: Vec<Bullet>,                  // 中间左轮的子弹状态
-    current_player: Player,                 // 谁进行当前回合
-    next_player: Player,                    // 谁进行下一回合
+    stage: Stage,
+    damage: Damage,
+    // current_player: Player,                 // 谁进行当前回合
+    // next_player: Player,                    // 谁进行下一回合
     round: u32,                             // 轮次数
     turn: u32,                              // 回合数
     last_use: Option<GameItemUse>,          // 上一次使用道具记录
@@ -22,25 +34,54 @@ impl GameState {
             items: BTreeMap::new(),
             hp: BTreeMap::new(),
             revolver: Vec::new(),
-            current_player: Player::new(),
-            next_player: Player::new(),
+            stage: Stage::GameStart,
+            damage: Damage::new(),
+            // current_player: Player::new(),
+            // next_player: Player::new(),
             round: 0,
             turn: 0,
             last_use: None,
         }
     }
+
     fn is_current_player(&self, player: Player) -> bool {
-        self.current_player == player
+        match self.stage{
+            Stage::Act(current_player) => player == current_player,
+            Stage::Restricted(current_player) => player != current_player,
+            _ => false,
+        }
+        
     }
-    fn is_next_player(&self, player: Player) -> bool {
-        self.next_player == player
-    }
+
+    // fn is_next_player(&self, player: Player) -> bool {
+    //     self.next_player == player
+    // }
     fn round_turn(&self) -> (u32, u32) {
         (self.round, self.turn)
     }
-    fn set_next_player(&mut self, player: Player) {
-        self.next_player = player;
+    // fn set_next_player(&mut self, player: Player) {
+    //     self.next_player = player;
+    // }
+
+    fn use_item(&mut self, player: Player, item: GameItem){
+        match item {
+            GameItem::Knife => {
+                self.damage.set_double();
+            }
+            GameItem::Medicine => {
+
+            }
+        }
     }
+
+    fn draw_item(&mut self, player: Player, item: Option<GameItem>){
+
+    }
+
+    fn player_leave(&mut self, player: Player){
+
+    }
+
     fn pop_item(&mut self, player: Player, index: u32) -> Result<GameItem, &str> {
         match self.items.get_mut(&player) {
             Some(items) => items
@@ -81,29 +122,6 @@ impl GameState {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
-#[serde(rename_all(serialize = "lowercase", deserialize = "PascalCase"))]
-#[serde(deny_unknown_fields)]
-pub enum GameItem {
-    Knife,     // 折叠刀：使下一次开枪的伤害翻倍
-    Cigarette, // 香烟：回复玩家1点血量
-    Beer,      // 啤酒：弹出当前枪膛的1枚子弹
-    Handcuff,  // 手铐：对手下一回合无法行动
-    Magnifier, // 放大镜：是查看当前枪膛内子弹是实弹还是哑弹
-    Reverser,  // 逆转器：修改当前枪膛内子弹的类型，反转哑弹-实弹
-    Phone,     // 电话：若枪内仍有x颗子弹，查看第2颗到第x颗中随机一颗的子弹类型
-    Medicine,  // 药盒：50%概率回复玩家2点血量，50%概率扣除玩家1点血量
-    Empty,     // 空：无道具
-}
-
-#[derive(Serialize, Deserialize, Clone, Copy)]
-#[serde(rename_all(serialize = "lowercase", deserialize = "PascalCase"))]
-#[serde(deny_unknown_fields)]
-enum Bullet {
-    Dummy, // 哑弹
-    Real,  // 实弹
-}
-
 #[derive(Serialize)]
 pub struct GameStateOpen {
     round: u32,
@@ -127,4 +145,23 @@ pub struct GameItemUse {
     player: Player,
     item: GameItem,
     bullet: Bullet,
+}
+
+struct Damage{
+    is_double: bool,
+    damage: u32,
+}
+
+impl Damage{
+    pub fn new() -> Self {  
+        Self{ is_double: false, damage: 1,}
+    }
+
+    pub fn get_damage(&mut self) -> u32 {
+        if self.is_double {self.is_double = false; self.damage * 2} else { self.damage }
+    }
+
+    pub fn set_double(&mut self){
+        self.is_double = true;
+    }
 }
