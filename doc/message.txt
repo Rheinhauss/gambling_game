@@ -29,7 +29,7 @@
 //Server to Client
 {
   "class": "game",
-  "type": str, // NewRound, NewTurn, UseItem, DrawItemPool, GameEnd
+  "type": str, // NewRound, NewTurn, UseItem, DrawItemPool, UpdateCard, GameEnd
   "item_pool": [str...], // 只有DrawItemPool有，道具选择池
   "win": bool, // 只有GameEnd有，是否胜利
   "open_state":{
@@ -44,6 +44,7 @@
       "user": str, // self, oppo
       "item": str, // knife, cigarette, beer, handcuffs, magnifier, reverser, phone, medicine, shoot 注意此处用shoot代表开枪
       "result": str // ("dummy" or "real") if beer/magnifier/phone/shoot else ""
+      "effect_num": int
     }
   },
   "hidden_state":{
