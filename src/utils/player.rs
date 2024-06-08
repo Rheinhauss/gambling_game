@@ -56,7 +56,17 @@ pub enum GameItem {
 #[derive(Serialize, Deserialize, Clone, Copy)]
 #[serde(rename_all(serialize = "lowercase", deserialize = "PascalCase"))]
 #[serde(deny_unknown_fields)]
+
 pub enum Bullet {
     Dummy, // 哑弹
     Real,  // 实弹
+}
+
+impl Bullet{
+    pub fn reverse(&self) -> Self{
+        match self {
+            Bullet::Dummy => Bullet::Real,
+            Bullet::Real => Bullet::Dummy,
+        }
+    }
 }

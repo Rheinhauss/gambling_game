@@ -123,6 +123,7 @@ impl Lobby {
             None => Err("Room not found"),
             Some(w_room) => {
                 let player1 = w_room.player();
+                todo!("pass two connection to room");
                 let new_room = Arc::new(RwLock::new(GameRoom::from_waiting_room(
                     w_room.as_ref(),
                     new_player,

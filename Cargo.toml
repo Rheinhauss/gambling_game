@@ -9,6 +9,7 @@ axum = "0.7.5"
 tokio-tungstenite = "*"
 serde = { version = "1", features = ["derive"] }
 uuid = "1.8.0"
+fastrand = "2.1.0"
 log = "0.4"
 tokio-stream = "0.1"
 futures-util = "0.3"
