@@ -244,6 +244,9 @@ export default {
             case 'DrawItemPool':
               handleDrawItem(data);
               break;
+            case 'UpdateCard':
+              updateCard(data);
+              break;
             case 'GameEnd':
               endGame(data);
               break;
@@ -262,8 +265,8 @@ export default {
       // 初始化玩家/对手的血量/手牌
       playerHealth.value = data.open_state.hp_self;
       opponentHealth.value = data.open_state.hp_oppo;
-      playerHandCards.value = data.item_self;
-      opponentHandCards.value = data.item_oppo;
+      playerHandCards.value = data.item_self.filter(item => item !== 'empty');
+      opponentHandCards.value = data.item_oppo.filter(item => item !== 'empty');
       showRoundNote();
     };
 
@@ -272,8 +275,8 @@ export default {
       // 更新玩家/对手的血量/手牌
       playerHealth.value = data.open_state.hp_self;
       opponentHealth.value = data.open_state.hp_oppo;
-      playerHandCards.value = data.item_self;
-      opponentHandCards.value = data.item_oppo;
+      playerHandCards.value = data.item_self.filter(item => item !== 'empty');
+      opponentHandCards.value = data.item_oppo.filter(item => item !== 'empty');
       // 判断不同玩家的回合决定按钮操作的可用性
       if(data.open_state.playing === true) {
         playerTurn(data);
@@ -354,7 +357,7 @@ export default {
           break;
         case 'phone':
           itemUseText.value = `你使用了电话！`;
-          // 待添加第几颗子弹
+          phoneBulletID = data.last_use.effect_num;
           if (data.last_use.result === 'dummy') {
             phoneBulletType = '哑弹';
           } else if (data.last_use.result === 'real') {
@@ -364,6 +367,7 @@ export default {
           break;
         case 'medicine':
           itemUseText.value = `你使用了药盒！`;
+          medicineHP = data.last_use.effect_num;
           if (medicineHP == 2) {
             itemEffetText.value = `回复了2点血量`;
           } else if (medicineHP == -1) {
@@ -383,8 +387,8 @@ export default {
       // 更新玩家/对手的血量/手牌
       playerHealth.value = data.open_state.hp_self;
       opponentHealth.value = data.open_state.hp_oppo;
-      playerHandCards.value = data.item_self;
-      opponentHandCards.value = data.item_oppo;
+      playerHandCards.value = data.item_self.filter(item => item !== 'empty');
+      opponentHandCards.value = data.item_oppo.filter(item => item !== 'empty');
       setTimeout(() => {
         cardEffetShowStatus.value = false;
       }, 2000);
@@ -451,11 +455,18 @@ export default {
       // 更新玩家/对手的血量/手牌
       playerHealth.value = data.open_state.hp_self;
       opponentHealth.value = data.open_state.hp_oppo;
-      playerHandCards.value = data.item_self;
-      opponentHandCards.value = data.item_oppo;
+      playerHandCards.value = data.item_self.filter(item => item !== 'empty');
+      opponentHandCards.value = data.item_oppo.filter(item => item !== 'empty');
       setTimeout(() => {
         cardEffetShowStatus.value = false;
       }, 2000);
+    };
+
+    // 更新手牌
+    const updateCard = (data) => {
+      console.log('Update Card:', data);
+      playerHandCards.value = data.item_self.filter(item => item !== 'empty');
+      opponentHandCards.value = data.item_oppo.filter(item => item !== 'empty');
     };
 
     // 抽取卡牌池中的卡牌
@@ -593,6 +604,7 @@ export default {
       handleNewTurn,
       useItem,
       handleDrawItem,
+      updateCard,
       endGame,
     };
   }
