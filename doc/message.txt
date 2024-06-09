@@ -38,8 +38,8 @@
     "hp_self": int,
     "hp_oppo": int,
     "playing": bool, // 是否当前回合的操作者
-    "item_self": [str * 4],// knife, cigarette, beer, handcuffs, magnifier, reverser, phone, medicine, empty
-    "item_oppo": [str * 4],
+    "items_self": [str * 4],// knife, cigarette, beer, handcuffs, magnifier, reverser, phone, medicine, empty
+    "items_oppo": [str * 4],
     "last_use": {
       "user": str, // self, oppo
       "item": str, // knife, cigarette, beer, handcuffs, magnifier, reverser, phone, medicine, shoot 注意此处用shoot代表开枪

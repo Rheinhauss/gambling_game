@@ -342,9 +342,7 @@ impl GameState {
         } else {
             let (pl_self, pl_oppo) = if p == p1 { (p1, p2) } else { (p2, p1) };
             info!("pl_self: {}, pl_oppo: {}", pl_self, pl_oppo);
-            // info!("state: {}", serde_json::to_string(self).unwrap());
-            dbg!(self);
-            // info!("state: {}", serde_json::to_string(self).unwrap());
+            // dbg!(self);
             Some(GameStateOpen {
                 round: self.round,
                 turn: self.turn,
