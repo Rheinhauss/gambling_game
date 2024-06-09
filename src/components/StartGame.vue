@@ -4,7 +4,7 @@
       <div class="title">恶魔轮盘</div>
       <div class="buttons">
         <button @click="goToOnline">在线游戏</button>
-        <button @click="goToOffline">离线游戏</button>
+        <!-- <button @click="goToOffline">离线游戏</button> -->
         <button @click="closePage">退出</button>
       </div>
     </div>
@@ -25,10 +25,10 @@ export default {
       router.push('/match');
     };
   
-    // 离线游戏
-    const goToOffline = () => {
-      router.push('/game');
-    };
+    // // 离线游戏
+    // const goToOffline = () => {
+    //   router.push('/game');
+    // };
   
     // 关闭页面
     const closePage = () => {
@@ -37,7 +37,7 @@ export default {
 
     return {
       goToOnline,
-      goToOffline,
+      // goToOffline,
       closePage,
     };
   }
