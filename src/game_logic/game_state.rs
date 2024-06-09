@@ -6,7 +6,7 @@ use serde_with::serde_as;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[derive(Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Serialize, Debug)]
 pub enum Stage {
     RoundStart,
     SendItem(Player, [GameItem; 3]),
@@ -15,7 +15,7 @@ pub enum Stage {
 }
 
 #[serde_as]
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 pub struct GameState {
     players: (Player, Player),
     items: HashMap<Player, Vec<GameItem>>, // 双方道具, 只有两个人的
@@ -69,13 +69,15 @@ impl GameState {
         let (p1, p2) = self.players;
         self.hps.insert(p1, fastrand::i32(2..=4));
         self.hps.insert(p2, fastrand::i32(2..=4));
-}   
+    }
 
     fn setup_items(&mut self) {
         self.items.clear();
         let (p1, p2) = self.players;
-        self.items.insert(p1, vec![self.get_random_item(), self.get_random_item()]);
-        self.items.insert(p2, vec![self.get_random_item(), self.get_random_item()]);
+        self.items
+            .insert(p1, vec![self.get_random_item(), self.get_random_item()]);
+        self.items
+            .insert(p2, vec![self.get_random_item(), self.get_random_item()]);
     }
 
     fn setup_cuffs(&mut self) {
@@ -317,14 +319,18 @@ impl GameState {
     }
     pub fn open_state(&self, p: Player) -> Option<GameStateOpen> {
         let (p1, p2) = self.players;
-        info!("in game stage, players are({}, {}), and is finding open state {}", p1, p2, p);
+        info!(
+            "in game stage, players are({}, {}), and is finding open state {}",
+            p1, p2, p
+        );
         // p must in players
         if p != p1 && p != p2 {
             None
         } else {
             let (pl_self, pl_oppo) = if p == p1 { (p1, p2) } else { (p2, p1) };
             info!("pl_self: {}, pl_oppo: {}", pl_self, pl_oppo);
-            info!("state: {}", serde_json::to_string(self).unwrap());
+            dbg!(self);
+            // info!("state: {}", serde_json::to_string(self).unwrap());
             Some(GameStateOpen {
                 round: self.round,
                 turn: self.turn,
@@ -363,7 +369,7 @@ pub struct GameStateHidden {
     bullets: Vec<Bullet>,
 }
 
-#[derive(Serialize, Clone, Copy)]
+#[derive(Serialize, Clone, Copy, Debug)]
 pub struct GameItemUse {
     player: Player,
     item: GameItem,
@@ -387,7 +393,7 @@ impl GameItemUse {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 struct Damage {
     is_double: bool,
     damage: u32,

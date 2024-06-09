@@ -6,7 +6,7 @@
     },
 };
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Hash, Serialize, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct Player {
@@ -53,7 +53,7 @@ pub enum GameItem {
     Empty,     // 空：无道具
 }
 
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 #[serde(rename_all(serialize = "lowercase", deserialize = "PascalCase"))]
 #[serde(deny_unknown_fields)]
 
@@ -62,8 +62,8 @@ pub enum Bullet {
     Real,  // 实弹
 }
 
-impl Bullet{
-    pub fn reverse(&self) -> Self{
+impl Bullet {
+    pub fn reverse(&self) -> Self {
         match self {
             Bullet::Dummy => Bullet::Real,
             Bullet::Real => Bullet::Dummy,
