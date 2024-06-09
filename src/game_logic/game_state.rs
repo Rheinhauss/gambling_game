@@ -261,6 +261,7 @@ impl GameState {
     }
 
     fn switch_to_player(&mut self, player: Player) {
+        info!("[{}]'snew turn!", player);
         let items = self.generate_items();
         self.stage = match self.cuffs.get(&player) {
             Some(false) => {
@@ -284,13 +285,18 @@ impl GameState {
         self.hps.get_mut(&player).map(|hp| *hp + offset);
     }
 
-    pub fn shoot(&mut self, player: Player, is_suicide: bool) {
+    pub fn shoot(&mut self, player: Player, shoot_self: bool) {
         if self.is_acting(player) {
+            info!(
+                "player [{}] shoot {}",
+                player,
+                if shoot_self { "self" } else { "oppo" }
+            );
             let opponent = self.opponent_of(player);
             if let Some(bullet) = self.revolver.pop() {
                 match bullet {
                     Bullet::Real => {
-                        if is_suicide {
+                        if shoot_self {
                             let offset = -(self.damage.get_damage() as i32);
                             self.adapt_hp(player, offset);
                             if !self.check_game_over() && !self.check_new_round() {
@@ -305,7 +311,7 @@ impl GameState {
                         }
                     }
                     Bullet::Dummy => {
-                        if !self.check_new_round() && !is_suicide {
+                        if !self.check_new_round() && !shoot_self {
                             self.switch_to_player(opponent);
                         }
                     }
@@ -354,10 +360,10 @@ impl GameState {
     }
     pub fn open_state(&self, p: Player) -> Option<GameStateOpen> {
         let (p1, p2) = self.players;
-        info!(
-            "in game stage, players are({}, {}), and is finding open state {}",
-            p1, p2, p
-        );
+        // info!(
+        //     "in game stage, players are({}, {}), and is finding open state {}",
+        //     p1, p2, p
+        // );
         // p must in players
         if p != p1 && p != p2 {
             None

@@ -169,7 +169,7 @@ impl Connection {
         while let Some(msg) = ws_rx.next().await {
             if let Ok(msg) = msg {
                 if msg.is_text() {
-                    info!("{}", msg);
+                    info!("pl [{}] incoming msg : {}", player, msg);
                     let msg = serde_json::from_slice::<Value>(&msg.into_data())
                         .or(Err("Invalid json {}"))
                         .unwrap(); // fixme
@@ -266,17 +266,16 @@ impl Connection {
             }
             WsRxMsgType::DrawItem => {
                 let item = msg.get("draw").ok_or("Invalid json 1")?.clone();
-                info!("{}", item);
                 let item = serde_json::from_value::<GameItem>(item).or(Err("Invalid json 2"))?;
                 Ok(GameEvent::DrawItem(player, Some(item)))
             }
             WsRxMsgType::Shoot => {
-                let bullet = msg.get("bullet").ok_or("Invalid json 1")?.clone();
-                let bullet = serde_json::from_value::<bool>(bullet).or(Err("Invalid json 2"))?;
-                Ok(GameEvent::Shoot(player, bullet))
+                let shoot = msg.get("shoot").ok_or("Invalid json 1")?.clone();
+                let shoot = serde_json::from_value::<bool>(shoot).or(Err("Invalid json 2"))?;
+                Ok(GameEvent::Shoot(player, shoot))
             }
             _ => {
-                info!("{}", msg);
+                warn!("{}", msg);
                 Err("Undefined game msg type")
             }
         }
@@ -284,7 +283,7 @@ impl Connection {
     // aync fn listen_game
 
     async fn send_msg(&mut self, msg: serde_json::Value) {
-        info!("send_msg: {}", msg.to_string());
+        debug!("send_msg: {}", msg.to_string());
         self.sender
             .lock()
             .await
@@ -380,6 +379,14 @@ impl Connection {
         self.send_msg(json!({
             "class": "game",
             "type": "UseItem",
+            "open_state": open_state,
+        }))
+        .await;
+    }
+    pub async fn send_drawed_item(&mut self, open_state: &GameStateOpen) {
+        self.send_msg(json!({
+            "class": "game",
+            "type": "UpdateCard",
             "open_state": open_state,
         }))
         .await;
