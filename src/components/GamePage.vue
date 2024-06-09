@@ -515,7 +515,7 @@ export default {
 
     const endGame = (data) => {
       console.log('Game End:', data);
-      isWin.value = data.hidden_state.win;
+      isWin.value = data.win;
       roundNum.value = data.open_state.round;
       router.push({
         path: '/end',
