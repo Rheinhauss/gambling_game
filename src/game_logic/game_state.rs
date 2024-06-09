@@ -2,10 +2,11 @@
 use log::{debug, error, info, trace, warn};
 use serde::{Deserialize, Serialize};
 use serde_json::de::Read;
+use serde_with::serde_as;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum Stage {
     RoundStart,
     SendItem(Player, [GameItem; 3]),
@@ -13,6 +14,8 @@ pub enum Stage {
     GameOver(Player),
 }
 
+#[serde_as]
+#[derive(Serialize)]
 pub struct GameState {
     players: (Player, Player),
     items: HashMap<Player, Vec<GameItem>>, // 双方道具, 只有两个人的
@@ -50,10 +53,10 @@ impl GameState {
         let mut temp_vec = Vec::new();
         let real_count = fastrand::u32(2..=4);
         let dummy_count = fastrand::u32(2..=4);
-        for _ in 0..real_count{
+        for _ in 0..real_count {
             temp_vec.push(Bullet::Real);
         }
-        for _ in 0..dummy_count{
+        for _ in 0..dummy_count {
             temp_vec.push(Bullet::Dummy);
         }
         let temp_slice = temp_vec.as_mut_slice();
@@ -146,7 +149,7 @@ impl GameState {
                 }
             };
         }
-        if !self.check_game_over(){
+        if !self.check_game_over() {
             self.check_new_round();
         }
     }
@@ -199,7 +202,7 @@ impl GameState {
     fn switch_to_player(&mut self, player: Player) {
         let items = self.generate_items();
         self.stage = match self.cuffs.get(&player) {
-            Some(false) => { 
+            Some(false) => {
                 self.turn += 1;
                 Stage::SendItem(player, items)
             }
@@ -235,7 +238,7 @@ impl GameState {
                         } else {
                             let offset = -(self.damage.get_damage() as i32);
                             self.adapt_hp(opponent, offset);
-                            if !self.check_game_over(){
+                            if !self.check_game_over() {
                                 self.check_new_round();
                             }
                         }
@@ -295,6 +298,8 @@ impl GameState {
             None
         } else {
             let (pl_self, pl_oppo) = if p == p1 { (p1, p2) } else { (p2, p1) };
+            info!("pl_self: {}, pl_oppo: {}", pl_self, pl_oppo);
+            info!("state: {}", serde_json::to_string(self).unwrap());
             Some(GameStateOpen {
                 round: self.round,
                 turn: self.turn,
@@ -357,6 +362,7 @@ impl GameItemUse {
     }
 }
 
+#[derive(Serialize)]
 struct Damage {
     is_double: bool,
     damage: u32,
