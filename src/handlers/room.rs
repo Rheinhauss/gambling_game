@@ -84,6 +84,15 @@ impl GameRoom {
         }
     }
 
+    async fn after_shoot(&mut self) {
+        if let Some(open_state) = self.state.open_state(self.host_player.0) {
+            self.host_player.1.send_shoot(&open_state).await;
+        }
+        if let Some(open_state) = self.state.open_state(self.guest_player.0) {
+            self.guest_player.1.send_shoot(&open_state).await;
+        }
+    }
+
     async fn after_player_leave(&mut self, player: Player) {
         if player == self.host_player.0 {
             self.guest_player.1.send_opponent_leave().await;
@@ -133,11 +142,11 @@ impl GameRoom {
     async fn after_game_over(&mut self, winner: Player) {
         self.host_player
             .1
-            .send_game_end(self.host_player.0 == winner)
+            .send_game_end(self.state.open_state(self.host_player.0).as_ref().unwrap(), self.host_player.0 == winner)
             .await;
         self.guest_player
             .1
-            .send_game_end(self.guest_player.0 == winner)
+            .send_game_end(self.state.open_state(self.guest_player.0).as_ref().unwrap(), self.guest_player.0 == winner)
             .await;
     }
 
@@ -167,6 +176,7 @@ impl GameRoom {
                 }
                 GameEvent::Shoot(player, shoot_self) => {
                     self.state.shoot(player, shoot_self);
+                    self.after_shoot().await;
                 }
                 GameEvent::Leave(player) => {
                     self.state.player_leave(player);

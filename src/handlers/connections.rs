@@ -383,6 +383,14 @@ impl Connection {
         }))
         .await;
     }
+    pub async fn send_shoot(&mut self, open_state: &GameStateOpen) {
+        self.send_msg(json!({
+            "class": "game",
+            "type": "UseItem",
+            "open_state": open_state,
+        }))
+        .await;
+    }
     pub async fn send_drawed_item(&mut self, open_state: &GameStateOpen) {
         self.send_msg(json!({
             "class": "game",
@@ -400,11 +408,12 @@ impl Connection {
         }))
         .await;
     }
-    pub async fn send_game_end(&mut self, win: bool) {
+    pub async fn send_game_end(&mut self, open_state: &GameStateOpen, win: bool) {
         self.send_msg(json!({
             "class": "game",
             "type": "GameEnd",
-            "win": win
+            "win": win,
+            "open_state": open_state,
         }))
         .await;
     }
