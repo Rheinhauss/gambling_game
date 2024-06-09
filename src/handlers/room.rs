@@ -62,53 +62,53 @@ impl GameRoom {
         if *player == self.host_player.0 { self.host_player.0 } else { self.guest_player.0 }
     }
 
-    fn after_item_used(&mut self){
+    async fn after_item_used(&mut self){
         if let Some(open_state) = self.state.open_state(self.host_player.0){
-            self.host_player.1.send_use_item(open_state);
+            self.host_player.1.send_use_item(open_state).await;
         }
         if let Some(open_state) = self.state.open_state(self.guest_player.0){
-            self.guest_player.1.send_use_item(open_state);
+            self.guest_player.1.send_use_item(open_state).await;
         }
     }
 
-    fn after_player_leave(&mut self, player: Player){
+    async fn after_player_leave(&mut self, player: Player){
         if player == self.host_player.0 {
-            self.guest_player.1.send_opponent_leave();
+            self.guest_player.1.send_opponent_leave().await;
         } else {
-            self.host_player.1.send_opponent_leave();
+            self.host_player.1.send_opponent_leave().await;
         }
     }
 
-    fn send_items(&mut self, player: Player, items: [GameItem; 3]) {
+    async fn send_items(&mut self, player: Player, items: [GameItem; 3]) {
         if player == self.host_player.0 {
-            self.host_player.1.send_draw_item_pool(self.state.open_state(player).unwrap(), Vec::from(items));
+            self.host_player.1.send_draw_item_pool(self.state.open_state(player).unwrap(), Vec::from(items)).await;
         } else {
-            self.guest_player.1.send_draw_item_pool(self.state.open_state(player).unwrap(), Vec::from(items));
+            self.guest_player.1.send_draw_item_pool(self.state.open_state(player).unwrap(), Vec::from(items)).await;
         }
     }
 
-    fn after_round_started(&mut self){
+    async fn after_round_started(&mut self){
         // TODO: I gave up and use unwrap() at the end.
         info!("host player is:{}", self.host_player.0);
         info!("guest player is:{}", self.guest_player.0);
-        self.host_player.1.send_new_round(self.state.open_state(self.host_player.0).unwrap(), self.state.hidden_state().unwrap());
-        self.guest_player.1.send_new_round(self.state.open_state(self.guest_player.0).unwrap(), self.state.hidden_state().unwrap());
+        self.host_player.1.send_new_round(self.state.open_state(self.host_player.0).unwrap(), self.state.hidden_state().unwrap()).await;
+        self.guest_player.1.send_new_round(self.state.open_state(self.guest_player.0).unwrap(), self.state.hidden_state().unwrap()).await;
     }
 
-    fn after_game_over(&mut self, winner: Player){
-        self.host_player.1.send_game_end(self.host_player.0 == winner);
-        self.guest_player.1.send_game_end(self.guest_player.0 == winner);
+    async fn after_game_over(&mut self, winner: Player){
+        self.host_player.1.send_game_end(self.host_player.0 == winner).await;
+        self.guest_player.1.send_game_end(self.guest_player.0 == winner).await;
     }
 
     pub async fn listen_game(&mut self) {
         self.state.start_round();
-        self.after_round_started();
+        self.after_round_started().await;
         while let Some(event) = self.game_events_rx.recv().await {
             // receive event from receiver (msg from client)
             match event {
                 GameEvent::UseItem(player, item) => {
                     self.state.use_item(player, item);
-                    self.after_item_used();
+                    self.after_item_used().await;
                 }
                 GameEvent::DrawItem(player, item) => {
                     self.state.draw_item(player, item);
@@ -118,14 +118,14 @@ impl GameRoom {
                 }
                 GameEvent::Leave(player) => {
                     self.state.player_leave(player);
-                    self.after_player_leave(player);
+                    self.after_player_leave(player).await;
                 }
             }
             
             // send response to connection (msg to client)
             match self.state.current_stage(){
                 Stage::GameOver(winner) => {
-                    self.after_game_over(winner);
+                    self.after_game_over(winner).await;
                     break;
                 }
                 Stage::Act(player) => {
@@ -133,11 +133,11 @@ impl GameRoom {
                 }
                 Stage::SendItem(player, items) => {
                     self.state.item_sended();
-                    self.send_items(player, items);
+                    self.send_items(player, items).await;
                 }
                 Stage::RoundStart => {
                     self.state.start_round();
-                    self.after_round_started();
+                    self.after_round_started().await;
                 }
             }
         }
