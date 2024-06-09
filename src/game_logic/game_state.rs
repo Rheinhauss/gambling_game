@@ -85,12 +85,15 @@ impl GameState {
         self.cuffs.insert(p2, false);
     }
 
-    pub fn start_round(&mut self) {
-        self.round += 1;
-        self.fill_revolver();
+    pub fn start_game(&mut self) {
         self.setup_hp();
         self.setup_items();
         self.setup_cuffs();
+    }
+
+    pub fn start_round(&mut self) {
+        self.round += 1;
+        self.fill_revolver();
         if let Stage::RoundStart = self.stage {
             self.switch_to_player(if fastrand::bool() {
                 self.players.0
@@ -98,6 +101,16 @@ impl GameState {
                 self.players.1
             });
         }
+    }
+
+    fn get_items(&self, p: &Player) -> [GameItem; 4] {
+        let mut slice_vec = Vec::new();
+        match self.items.get(p) {
+            Some(items) => slice_vec.extend(items),
+            None => {},
+        }
+        slice_vec.extend(vec![GameItem::Empty; 4]);
+        slice_vec[0..4].try_into().unwrap()
     }
 
     fn is_current_player(&self, player: Player) -> bool {
@@ -324,14 +337,14 @@ impl GameState {
         } else {
             let (pl_self, pl_oppo) = if p == p1 { (p1, p2) } else { (p2, p1) };
             info!("pl_self: {}, pl_oppo: {}", pl_self, pl_oppo);
-            info!("state: {}", serde_json::to_string(self).unwrap());
+            // info!("state: {}", serde_json::to_string(self).unwrap());
             Some(GameStateOpen {
                 round: self.round,
                 turn: self.turn,
                 hp_self: self.hps.get(&pl_self).unwrap().clone(),
                 hp_oppo: self.hps.get(&pl_oppo).unwrap().clone(),
-                items_self: self.items.get(&pl_self).unwrap()[0..4].try_into().unwrap(),
-                items_oppo: self.items.get(&pl_oppo).unwrap()[0..4].try_into().unwrap(),
+                items_self: self.get_items(&pl_self),
+                items_oppo: self.get_items(&pl_oppo),
                 playing: self.is_current_player(p),
                 last_use: self.last_use,
             })

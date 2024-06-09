@@ -101,6 +101,7 @@ impl GameRoom {
     }
 
     pub async fn listen_game(&mut self) {
+        self.state.start_game();
         self.state.start_round();
         self.after_round_started().await;
         while let Some(event) = self.game_events_rx.recv().await {
