@@ -3,6 +3,7 @@
 use crate::game_logic::game_event::GameEvent;
 use crate::game_logic::game_state::{GameState, Stage};
 use crate::utils::player::{GameItem, Player};
+use crate::info;
 
 use super::connections::Connection;
 
@@ -88,6 +89,8 @@ impl GameRoom {
 
     fn after_round_started(&mut self){
         // TODO: I gave up and use unwrap() at the end.
+        info!("host player is:{}", self.host_player.0);
+        info!("guest player is:{}", self.guest_player.0);
         self.host_player.1.send_new_round(self.state.open_state(self.host_player.0).unwrap(), self.state.hidden_state().unwrap());
         self.guest_player.1.send_new_round(self.state.open_state(self.guest_player.0).unwrap(), self.state.hidden_state().unwrap());
     }

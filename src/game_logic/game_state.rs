@@ -45,7 +45,7 @@ impl GameState {
         }
     }
 
-    pub fn fill_revolver(&mut self) {
+    fn fill_revolver(&mut self) {
         self.revolver.clear();
         let mut temp_vec = Vec::new();
         let real_count = fastrand::u32(2..=4);
@@ -61,9 +61,33 @@ impl GameState {
         self.revolver.extend(temp_slice.iter());
     }
 
+    fn setup_hp(&mut self) {
+        self.hps.clear();
+        let (p1, p2) = self.players;
+        self.hps.insert(p1, fastrand::i32(2..=4));
+        self.hps.insert(p2, fastrand::i32(2..=4));
+}   
+
+    fn setup_items(&mut self) {
+        self.items.clear();
+        let (p1, p2) = self.players;
+        self.items.insert(p1, vec![self.get_random_item(), self.get_random_item()]);
+        self.items.insert(p2, vec![self.get_random_item(), self.get_random_item()]);
+    }
+
+    fn setup_cuffs(&mut self) {
+        self.cuffs.clear();
+        let (p1, p2) = self.players;
+        self.cuffs.insert(p1, false);
+        self.cuffs.insert(p2, false);
+    }
+
     pub fn start_round(&mut self) {
         self.round += 1;
         self.fill_revolver();
+        self.setup_hp();
+        self.setup_items();
+        self.setup_cuffs();
         if let Stage::RoundStart = self.stage {
             self.switch_to_player(if fastrand::bool() {
                 self.players.0
@@ -290,6 +314,7 @@ impl GameState {
     }
     pub fn open_state(&self, p: Player) -> Option<GameStateOpen> {
         let (p1, p2) = self.players;
+        info!("in game stage, players are({}, {}), and is finding open state {}", p1, p2, p);
         // p must in players
         if p != p1 && p != p2 {
             None
