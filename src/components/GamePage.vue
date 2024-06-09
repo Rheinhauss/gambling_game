@@ -265,8 +265,8 @@ export default {
       // 初始化玩家/对手的血量/手牌
       playerHealth.value = data.open_state.hp_self;
       opponentHealth.value = data.open_state.hp_oppo;
-      playerHandCards.value = data.items_self.filter(item => item !== 'empty');
-      opponentHandCards.value = data.items_oppo.filter(item => item !== 'empty');
+      playerHandCards.value = data.open_state.items_self.filter(item => item !== 'empty');
+      opponentHandCards.value = data.open_state.items_oppo.filter(item => item !== 'empty');
       showRoundNote();
     };
 
