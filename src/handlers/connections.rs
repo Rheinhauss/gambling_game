@@ -13,6 +13,7 @@ use super::lobby::LobbyClientEvent;
 use futures_util::stream::StreamExt;
 use futures_util::stream::{SplitSink, SplitStream};
 use serde_json::{json, Value};
+use std::io::Seek;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
@@ -109,6 +110,7 @@ impl Connection {
         let ws_tx = Arc::from(tokio::sync::Mutex::from(ws_tx));
         info!("handshake: {}", peer);
         let (tx, rx) = oneshot::channel::<Player>();
+        let (tx1, mut rx1) = oneshot::channel::<Connection>();
         if let Some(msg) = ws_rx.next().await {
             if let Ok(msg) = msg {
                 debug!("{}", &msg);
@@ -122,8 +124,9 @@ impl Connection {
                             let player = Player::new();
                             let conn = Connection::new(player, ws_tx);
                             lobby_client_mq_tx
-                                .send(LobbyClientEvent::HandShake(player, conn, tx))
+                                .send(LobbyClientEvent::HandShake(player, conn.clone(), tx))
                                 .unwrap();
+                            tx1.send(conn);
                         }
                         _ => {
                             warn!("[handshake] invalid handshake message 1!");
@@ -142,8 +145,9 @@ impl Connection {
 
         if let Ok(player) = rx.await {
             info!("Handshake success! player id [{}]", player.id());
-            tokio::spawn(Self::listen_lobby_for_player(
+            tokio::spawn(Self::listen_for_player(
                 player,
+                rx1.try_recv().unwrap(),
                 ws_rx,
                 lobby_client_mq_tx,
             ));
@@ -152,8 +156,9 @@ impl Connection {
         }
     }
 
-    async fn listen_lobby_for_player(
+    async fn listen_for_player(
         player: Player,
+        conn: Connection,
         mut ws_rx: SplitStream<WebSocketStream<TcpStream>>,
         to_lobby: UnboundedSender<LobbyClientEvent>,
     ) {
@@ -161,11 +166,16 @@ impl Connection {
         while let Some(msg) = ws_rx.next().await {
             if let Ok(msg) = msg {
                 if msg.is_text() {
-                    if let Ok(event) = Self::parse_receive_lobby(player, msg.into_data()) {
+                    if let Ok(event) = Self::parse_receive_lobby(player, msg.clone().into_data()) {
+                        info!("player [{}] lobby event: {}", player, event);
                         to_lobby.send(event).unwrap();
                     }
+                    if let Ok(event) = Self::parse_receive_game(player, msg.into_data()) {
+                        info!("player [{}] game event: {}", player, event);
+                        conn.game_event_tx.as_ref().unwrap().send(event).unwrap();
+                    }
                 } else if msg.is_close() {
-                    info!("player id [{}] close!", player);
+                    info!("player [{}] close!", player);
                     break;
                 }
             } else {
@@ -181,7 +191,9 @@ impl Connection {
     ) -> Result<LobbyClientEvent, &'static str> {
         let j = serde_json::from_slice::<Value>(&msg).or(Err("Invalid json {}"))?;
         let (msg_class, msg_type) = Self::check_rx_msg(&j).ok_or("Invalid json {}")?;
-
+        if let WsMsgClass::Game = msg_class {
+            return Err("Invalid msg class {}");
+        }
         match msg_type {
             WsRxMsgType::CreateRoom => Ok(LobbyClientEvent::CreateRoom(player)),
             WsRxMsgType::JoinRoom => {
@@ -207,7 +219,6 @@ impl Connection {
         }
     }
 
-    // todo
     pub fn parse_receive_game(player: Player, msg: Vec<u8>) -> Result<GameEvent, &'static str> {
         let j = serde_json::from_slice::<Value>(&msg).or(Err("Invalid json {}"))?;
         let (msg_class, msg_type) = Self::check_rx_msg(&j).ok_or("Invalid json {}")?;

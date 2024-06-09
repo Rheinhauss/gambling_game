@@ -125,8 +125,8 @@ impl Lobby {
             None => Err("Room not found"),
             Some(w_room) => {
                 let room_player = w_room.player();
-                if let Ok(room_conn) = self.get_connection(room_player).await{
-                    if let Ok(p2_conn) = self.get_connection(new_player).await{
+                if let Ok(room_conn) = self.get_connection(room_player).await {
+                    if let Ok(p2_conn) = self.get_connection(new_player).await {
                         let new_room = Arc::new(RwLock::new(GameRoom::from_waiting_room(
                             w_room.as_ref(),
                             new_player,
@@ -140,8 +140,11 @@ impl Lobby {
                             r.insert(new_player, new_room.clone());
                         }
                         // add tx to connections
-                        self.change_game_event_tx(room_player, Some(game_event_tx.clone())).await;
-                        self.change_game_event_tx(new_player, Some(game_event_tx)).await;
+                        self.change_game_event_tx(room_player, Some(game_event_tx.clone()))
+                            .await;
+                        self.change_game_event_tx(new_player, Some(game_event_tx))
+                            .await;
+                        info!("game_event_mq set!");
                         return Ok(new_room);
                     }
                 }
@@ -280,6 +283,21 @@ pub enum LobbyClientEvent {
     /*
     MatchMake(Player),
     */
+}
+impl std::fmt::Display for LobbyClientEvent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LobbyClientEvent::HandShake(player, _, _) => write!(f, "HandShake({})", player),
+            LobbyClientEvent::CreateRoom(player) => write!(f, "CreateRoom({})", player),
+            LobbyClientEvent::JoinRoom(player, room_id) => {
+                write!(f, "JoinRoom({}, {})", player, room_id)
+            }
+            LobbyClientEvent::LeaveRoom(player) => write!(f, "LeaveRoom({})", player),
+            /*
+            LobbyClientEvent::MatchMake(player) => write!(f, "MatchMake({})", player),
+            */
+        }
+    }
 }
 
 pub enum LobbyServerEvent {

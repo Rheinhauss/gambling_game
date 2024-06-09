@@ -70,3 +70,28 @@ impl Bullet {
         }
     }
 }
+
+impl std::fmt::Display for GameItem {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GameItem::Knife => write!(f, "Knife"),
+            GameItem::Cigarette => write!(f, "Cigarette"),
+            GameItem::Beer => write!(f, "Beer"),
+            GameItem::Handcuff => write!(f, "Handcuff"),
+            GameItem::Magnifier => write!(f, "Magnifier"),
+            GameItem::Reverser => write!(f, "Reverser"),
+            GameItem::Phone => write!(f, "Phone"),
+            GameItem::Medicine => write!(f, "Medicine"),
+            GameItem::Empty => write!(f, "Empty"),
+        }
+    }
+}
+
+impl std::fmt::Display for Bullet {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Bullet::Dummy => write!(f, "Dummy"),
+            Bullet::Real => write!(f, "Real"),
+        }
+    }
+}

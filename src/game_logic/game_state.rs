@@ -13,6 +13,16 @@ pub enum Stage {
     Act(Player),
     GameOver(Player),
 }
+impl std::fmt::Display for Stage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Stage::RoundStart => write!(f, "RoundStart"),
+            Stage::SendItem(p, _) => write!(f, "SendItem({})", p),
+            Stage::Act(p) => write!(f, "Act({})", p),
+            Stage::GameOver(p) => write!(f, "GameOver({})", p),
+        }
+    }
+}
 
 #[serde_as]
 #[derive(Serialize, Debug)]
@@ -109,7 +119,7 @@ impl GameState {
         let mut slice_vec = Vec::new();
         match self.items.get(p) {
             Some(items) => slice_vec.extend(items),
-            None => {},
+            None => {}
         }
         slice_vec.extend(vec![GameItem::Empty; 4]);
         slice_vec[0..4].try_into().unwrap()
@@ -341,8 +351,6 @@ impl GameState {
             None
         } else {
             let (pl_self, pl_oppo) = if p == p1 { (p1, p2) } else { (p2, p1) };
-            info!("pl_self: {}, pl_oppo: {}", pl_self, pl_oppo);
-            // dbg!(self);
             Some(GameStateOpen {
                 round: self.round,
                 turn: self.turn,
