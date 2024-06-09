@@ -118,14 +118,14 @@ import { useRouter } from 'vue-router';
 import { getSocket } from '@/socket/socket';
 
 const cardList = [
-  { name: 'Knife', call: '手锯', imageUrl: require('@/assets/knife.jpg'), note: '手锯：使下一次开枪的伤害翻倍'},
-  { name: 'Cigarette', call: '香烟', imageUrl: require('@/assets/cigarette.jpg'), note: '香烟：回复玩家1点血量'},
-  { name: 'Beer', call: '啤酒', imageUrl: require('@/assets/beer.jpg'), note: '啤酒：弹出当前枪膛的1枚子弹'},
-  { name: 'Handcuffs', call: '手铐', imageUrl: require('@/assets/handcuffs.jpg'), note: '手铐：对手下一回合无法行动' },
-  { name: 'MagnifyingGlass', call: '放大镜', imageUrl: require('@/assets/magnifyingGlass.jpg'), note:'放大镜：查看当前枪膛内的子弹类型'},
-  { name: 'Reverser', call: '逆转器', imageUrl: require('@/assets/reverser.jpg'), note:'逆转器：逆转当前枪膛内的子弹类型'},
-  { name: 'Phone', call: '电话', imageUrl: require('@/assets/phone.jpg'), note:'电话：若当前枪膛内有x颗子弹，随机查看第2颗子弹到第x颗子弹中的一颗子弹类型'},
-  { name: 'UnknownMedicine', call: '药盒', imageUrl: require('@/assets/unknownMedicine.jpg'), note:'药盒：50%概率回复玩家2点血量，50%概率扣除玩家1点血量'},
+  { name: 'knife', call: '手锯', imageUrl: require('@/assets/knife.jpg'), note: '手锯：使下一次开枪的伤害翻倍'},
+  { name: 'cigarette', call: '香烟', imageUrl: require('@/assets/cigarette.jpg'), note: '香烟：回复玩家1点血量'},
+  { name: 'beer', call: '啤酒', imageUrl: require('@/assets/beer.jpg'), note: '啤酒：弹出当前枪膛的1枚子弹'},
+  { name: 'handcuffs', call: '手铐', imageUrl: require('@/assets/handcuffs.jpg'), note: '手铐：对手下一回合无法行动' },
+  { name: 'magnifier', call: '放大镜', imageUrl: require('@/assets/magnifyingGlass.jpg'), note:'放大镜：查看当前枪膛内的子弹类型'},
+  { name: 'reverser', call: '逆转器', imageUrl: require('@/assets/reverser.jpg'), note:'逆转器：逆转当前枪膛内的子弹类型'},
+  { name: 'phone', call: '电话', imageUrl: require('@/assets/phone.jpg'), note:'电话：若当前枪膛内有x颗子弹，随机查看第2颗子弹到第x颗子弹中的一颗子弹类型'},
+  { name: 'medicine', call: '药盒', imageUrl: require('@/assets/unknownMedicine.jpg'), note:'药盒：50%概率回复玩家2点血量，50%概率扣除玩家1点血量'},
 ];
 
 export default {
