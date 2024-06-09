@@ -45,12 +45,13 @@ pub enum GameItem {
     Knife,     // 折叠刀：使下一次开枪的伤害翻倍
     Cigarette, // 香烟：回复玩家1点血量
     Beer,      // 啤酒：弹出当前枪膛的1枚子弹
-    Handcuff,  // 手铐：对手下一回合无法行动
+    Handcuffs,  // 手铐：对手下一回合无法行动
     Magnifier, // 放大镜：是查看当前枪膛内子弹是实弹还是哑弹
     Reverser,  // 逆转器：修改当前枪膛内子弹的类型，反转哑弹-实弹
     Phone,     // 电话：若枪内仍有x颗子弹，查看第2颗到第x颗中随机一颗的子弹类型
     Medicine,  // 药盒：50%概率回复玩家2点血量，50%概率扣除玩家1点血量
     Empty,     // 空：无道具
+    Shoot,      
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
@@ -77,12 +78,13 @@ impl std::fmt::Display for GameItem {
             GameItem::Knife => write!(f, "Knife"),
             GameItem::Cigarette => write!(f, "Cigarette"),
             GameItem::Beer => write!(f, "Beer"),
-            GameItem::Handcuff => write!(f, "Handcuff"),
+            GameItem::Handcuffs => write!(f, "Handcuffs"),
             GameItem::Magnifier => write!(f, "Magnifier"),
             GameItem::Reverser => write!(f, "Reverser"),
             GameItem::Phone => write!(f, "Phone"),
             GameItem::Medicine => write!(f, "Medicine"),
             GameItem::Empty => write!(f, "Empty"),
+            GameItem::Shoot => write!(f, "Shoot"),
         }
     }
 }

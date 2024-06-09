@@ -170,7 +170,7 @@ impl GameState {
                     self.last_use = Some(GameItemUse::new(player, item, None, Some(1)));
                     self.adapt_hp(player, 1);
                 }
-                GameItem::Handcuff => {
+                GameItem::Handcuffs => {
                     self.last_use = Some(GameItemUse::new(player, item, None, None));
                     self.cuffs.iter_mut().for_each(|(p, c)| *c = !*c);
                 }
@@ -203,7 +203,7 @@ impl GameState {
                         None => info! {"no bullet to reverse!"},
                     };
                 }
-                GameItem::Empty => {
+                _ => {
                     self.last_use = Some(GameItemUse::new(player, item, None, None));
                 }
             };
@@ -243,7 +243,7 @@ impl GameState {
         match fastrand::u8(0..=7) {
             0 => GameItem::Beer,
             1 => GameItem::Cigarette,
-            2 => GameItem::Handcuff,
+            2 => GameItem::Handcuffs,
             3 => GameItem::Knife,
             4 => GameItem::Reverser,
             5 => GameItem::Magnifier,
@@ -282,27 +282,28 @@ impl GameState {
     }
 
     fn adapt_hp(&mut self, player: Player, offset: i32) {
-        self.hps.get_mut(&player).map(|hp| *hp + offset);
+        if let Some(hp) = self.hps.get_mut(&player){
+            *hp = *hp + offset;
+        }
     }
 
     pub fn shoot(&mut self, player: Player, shoot_self: bool) {
         if self.is_acting(player) {
-            info!(
-                "player [{}] shoot {}",
-                player,
-                if shoot_self { "self" } else { "oppo" }
-            );
             let opponent = self.opponent_of(player);
             if let Some(bullet) = self.revolver.pop() {
+                self.last_use = Some(GameItemUse::new(player, GameItem::Shoot, Some(bullet), None));
                 match bullet {
                     Bullet::Real => {
+                        debug!("real bullet!");
                         if shoot_self {
+                            debug!("shoot self!");
                             let offset = -(self.damage.get_damage() as i32);
                             self.adapt_hp(player, offset);
                             if !self.check_game_over() && !self.check_new_round() {
                                 self.switch_to_player(opponent);
                             }
                         } else {
+                            debug!("shoot opponent!");
                             let offset = -(self.damage.get_damage() as i32);
                             self.adapt_hp(opponent, offset);
                             if !self.check_game_over() {
@@ -311,9 +312,13 @@ impl GameState {
                         }
                     }
                     Bullet::Dummy => {
-                        if !self.check_new_round() && !shoot_self {
+                        debug!("dummy bullet!");
+                        if !self.check_new_round() && !shoot_self { 
+                            debug!("shoot enemy!");
                             self.switch_to_player(opponent);
-                        }
+                        } else {
+                            debug!("shoot self or turn end!");
+                        } 
                     }
                 }
             }
@@ -360,11 +365,6 @@ impl GameState {
     }
     pub fn open_state(&self, p: Player) -> Option<GameStateOpen> {
         let (p1, p2) = self.players;
-        // info!(
-        //     "in game stage, players are({}, {}), and is finding open state {}",
-        //     p1, p2, p
-        // );
-        // p must in players
         if p != p1 && p != p2 {
             None
         } else {
@@ -411,7 +411,7 @@ pub struct GameStateHidden {
 pub struct GameItemUse {
     user: Player,
     item: GameItem,
-    bullet: Option<Bullet>,
+    result: Option<Bullet>,
     effect_num: Option<i32>,
 }
 
@@ -419,7 +419,7 @@ pub struct GameItemUse {
 pub struct GameItemUseForPlayer {
     user: String,
     item: GameItem,
-    bullet: Option<Bullet>,
+    result: Option<Bullet>,
     effect_num: Option<i32>,
 }
 
@@ -427,13 +427,13 @@ impl GameItemUse {
     pub fn new(
         player: Player,
         item: GameItem,
-        bullet: Option<Bullet>,
+        result: Option<Bullet>,
         effect_num: Option<i32>,
     ) -> Self {
         Self {
             user: player,
             item,
-            bullet,
+            result,
             effect_num,
         }
     }
@@ -441,7 +441,7 @@ impl GameItemUse {
         GameItemUseForPlayer {
             user: if self.user == player { "self" } else { "oppo" }.to_string(),
             item: self.item,
-            bullet: self.bullet,
+            result: self.result,
             effect_num: self.effect_num,
         }
     }
