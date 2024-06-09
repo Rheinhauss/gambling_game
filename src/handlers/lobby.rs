@@ -29,7 +29,7 @@ pub struct Lobby {
 }
 
 impl Lobby {
-    async fn get_connection(&self, player: Player) -> Result<Connection, &str> {
+    pub async fn get_connection(&self, player: Player) -> Result<Connection, &str> {
         let c = self.connections.lock().await;
         match c.get(&player).cloned() {
             None => Err("Connection not found"),
@@ -163,16 +163,18 @@ impl Lobby {
     pub async fn listen(
         lobby_client_mq_tx: UnboundedSender<LobbyClientEvent>,
         mut lobby_client_mq_rx: UnboundedReceiver<LobbyClientEvent>,
+        mut tx: oneshot::Sender<Arc<tokio::sync::Mutex<Lobby>>>,
     ) {
-        let mut lobby = Self::new();
+        let mut lobby = Arc::new(tokio::sync::Mutex::new(Self::new()));
+        tx.send(lobby.clone());
         while let Some(event) = lobby_client_mq_rx.recv().await {
             match event {
                 LobbyClientEvent::HandShake(player, conn, tx) => {
-                    let Ok(_) = lobby.add_connection(player, conn).await else {
+                    let Ok(_) = lobby.lock().await.add_connection(player, conn).await else {
                         continue;
                     };
                     tx.send(player).unwrap();
-                    match lobby.get_connection(player).await {
+                    match lobby.lock().await.get_connection(player).await {
                         Ok(mut conn) => {
                             conn.send_handshake_success(player).await;
                         }
@@ -182,8 +184,8 @@ impl Lobby {
                     }
                 }
                 LobbyClientEvent::CreateRoom(player) => {
-                    let Ok(roomid) = lobby.on_create_room(player).await else {
-                        match lobby.get_connection(player).await {
+                    let Ok(roomid) = lobby.lock().await.on_create_room(player).await else {
+                        match lobby.lock().await.get_connection(player).await {
                             Ok(mut conn) => {
                                 conn.send_room_create_fail().await;
                             }
@@ -194,7 +196,7 @@ impl Lobby {
                         continue;
                     };
                     //告知
-                    match lobby.get_connection(player).await {
+                    match lobby.lock().await.get_connection(player).await {
                         Ok(mut conn) => {
                             conn.send_room_create_success(roomid).await;
                         }
@@ -204,21 +206,26 @@ impl Lobby {
                     }
                 }
                 LobbyClientEvent::JoinRoom(player, room_id) => {
-                    match lobby.on_join_room(room_id, player).await {
+                    let mut mg = lobby.lock().await;
+                    match mg.on_join_room(room_id, player).await {
                         Ok(new_room) => {
                             // 告知房主
+                            info!("room created from waiting [{}]", room_id);
                             let (p1, p2) =
-                                lobby.get_room(player).await.unwrap().read().await.players();
+                                mg.get_room(player).await.unwrap().read().await.players();
+                            info!("got players");
                             let player_to_notify = if player == p1 { p2 } else { p1 };
                             match (
-                                lobby.get_connection(player_to_notify).await,
-                                lobby.get_connection(player).await,
+                                mg.get_connection(player_to_notify).await,
+                                mg.get_connection(player).await,
                             ) {
                                 (Ok(mut conn_owner), Ok(mut conn_joiner)) => {
+                                    info!("sending joined msg to 2 players");
                                     tokio::join!(
                                         conn_owner.send_opponent_join(),
                                         conn_joiner.send_join_room_success(room_id)
                                     );
+                                    info!("sent joined msg to 2 players!");
                                 }
                                 _ => {
                                     warn!("can't find connections");
@@ -228,7 +235,7 @@ impl Lobby {
                                 new_room.write().await.listen_game().await;
                             });
                         }
-                        Err(e) => match lobby.get_connection(player).await {
+                        Err(e) => match mg.get_connection(player).await {
                             Ok(mut conn) => {
                                 conn.send_join_room_fail().await;
                             }
@@ -247,16 +254,16 @@ impl Lobby {
                 }
                 */
                 LobbyClientEvent::LeaveRoom(player_leaving) => {
-                    if let Ok(room) = lobby.get_room(player_leaving).await {
+                    if let Ok(room) = lobby.lock().await.get_room(player_leaving).await {
                         let (p1, p2) = room.read().await.players();
-                        lobby.remove_room(p1).await;
-                        lobby.remove_room(p2).await;
+                        lobby.lock().await.remove_room(p1).await;
+                        lobby.lock().await.remove_room(p2).await;
                         let player_to_notify = if player_leaving == p1 {
                             p2.clone()
                         } else {
                             p1.clone()
                         };
-                        match lobby.get_connection(player_to_notify).await {
+                        match lobby.lock().await.get_connection(player_to_notify).await {
                             Ok(mut conn) => {
                                 conn.send_opponent_leave().await;
                             }

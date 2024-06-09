@@ -1,4 +1,5 @@
-﻿use crate::game_logic::game_state::{GameStateHidden, GameStateOpen};
+﻿use crate::game_logic::game_event::GameItemIndex;
+use crate::game_logic::game_state::{GameStateHidden, GameStateOpen};
 use crate::{game_logic::game_event::GameEvent, utils::player::*};
 use futures_util::SinkExt;
 use log::{debug, error, info, trace, warn};
@@ -8,7 +9,7 @@ use tokio::sync::oneshot;
 use tokio_tungstenite::{tungstenite, WebSocketStream};
 use tungstenite::Message;
 
-use super::lobby::LobbyClientEvent;
+use super::lobby::{Lobby, LobbyClientEvent};
 
 use futures_util::stream::StreamExt;
 use futures_util::stream::{SplitSink, SplitStream};
@@ -47,6 +48,7 @@ enum WsMsgClass {
     Game,
 }
 
+#[derive(Debug)]
 pub struct Connection {
     pub id: Player,
     pub sender: Arc<tokio::sync::Mutex<SplitSink<WebSocketStream<TcpStream>, Message>>>,
@@ -105,12 +107,13 @@ impl Connection {
         ws_stream: WebSocketStream<TcpStream>,
         lobby_client_mq_tx: UnboundedSender<LobbyClientEvent>,
         peer: SocketAddr,
+        lobby: Arc<tokio::sync::Mutex<Lobby>>,
     ) {
         let (ws_tx, mut ws_rx) = ws_stream.split();
         let ws_tx = Arc::from(tokio::sync::Mutex::from(ws_tx));
         info!("handshake: {}", peer);
         let (tx, rx) = oneshot::channel::<Player>();
-        let (tx1, mut rx1) = oneshot::channel::<Connection>();
+        // let (tx1, mut rx1) = oneshot::channel::<Arc<Connection>>();
         if let Some(msg) = ws_rx.next().await {
             if let Ok(msg) = msg {
                 debug!("{}", &msg);
@@ -126,7 +129,7 @@ impl Connection {
                             lobby_client_mq_tx
                                 .send(LobbyClientEvent::HandShake(player, conn.clone(), tx))
                                 .unwrap();
-                            tx1.send(conn);
+                            // tx1.send(Arc::new(conn)).unwrap();
                         }
                         _ => {
                             warn!("[handshake] invalid handshake message 1!");
@@ -147,9 +150,9 @@ impl Connection {
             info!("Handshake success! player id [{}]", player.id());
             tokio::spawn(Self::listen_for_player(
                 player,
-                rx1.try_recv().unwrap(),
                 ws_rx,
                 lobby_client_mq_tx,
+                lobby,
             ));
         } else {
             warn!("Handshake refused!");
@@ -158,21 +161,51 @@ impl Connection {
 
     async fn listen_for_player(
         player: Player,
-        conn: Connection,
         mut ws_rx: SplitStream<WebSocketStream<TcpStream>>,
         to_lobby: UnboundedSender<LobbyClientEvent>,
+        lobby: Arc<tokio::sync::Mutex<Lobby>>,
     ) {
         info!("[listen_lobby_for_player] listening player id [{}]", player);
         while let Some(msg) = ws_rx.next().await {
             if let Ok(msg) = msg {
                 if msg.is_text() {
-                    if let Ok(event) = Self::parse_receive_lobby(player, msg.clone().into_data()) {
-                        info!("player [{}] lobby event: {}", player, event);
-                        to_lobby.send(event).unwrap();
-                    }
-                    if let Ok(event) = Self::parse_receive_game(player, msg.into_data()) {
-                        info!("player [{}] game event: {}", player, event);
-                        conn.game_event_tx.as_ref().unwrap().send(event).unwrap();
+                    info!("{}", msg);
+                    let msg = serde_json::from_slice::<Value>(&msg.into_data())
+                        .or(Err("Invalid json {}"))
+                        .unwrap(); // fixme
+                    match Self::check_rx_msg_class(&msg) {
+                        Some(WsMsgClass::Lobby) => match Self::parse_receive_lobby(player, msg) {
+                            Ok(event) => {
+                                info!("player [{}] lobby event: {}", player, event);
+                                to_lobby.send(event).unwrap();
+                            }
+                            Err(e) => {
+                                info!("player [{}] invalid lobby event: {}", player, e);
+                            }
+                        },
+                        Some(WsMsgClass::Game) => match Self::parse_receive_game(player, msg) {
+                            Ok(event) => {
+                                info!("player [{}] game event: {}", player, event);
+                                lobby
+                                    .lock()
+                                    .await
+                                    .get_connection(player)
+                                    .await
+                                    .unwrap()
+                                    .game_event_tx
+                                    .as_ref()
+                                    .ok_or("None tx")
+                                    .unwrap()
+                                    .send(event)
+                                    .unwrap();
+                            }
+                            Err(e) => {
+                                info!("player [{}] invalid game event: {}", player, e);
+                            }
+                        },
+                        None => {
+                            warn!("player [{}] invalid msg class", player);
+                        }
                     }
                 } else if msg.is_close() {
                     info!("player [{}] close!", player);
@@ -187,17 +220,16 @@ impl Connection {
 
     pub fn parse_receive_lobby(
         player: Player,
-        msg: Vec<u8>,
+        msg: Value,
     ) -> Result<LobbyClientEvent, &'static str> {
-        let j = serde_json::from_slice::<Value>(&msg).or(Err("Invalid json {}"))?;
-        let (msg_class, msg_type) = Self::check_rx_msg(&j).ok_or("Invalid json {}")?;
+        let (msg_class, msg_type) = Self::check_rx_msg(&msg).ok_or("Invalid json {}")?;
         if let WsMsgClass::Game = msg_class {
             return Err("Invalid msg class {}");
         }
         match msg_type {
             WsRxMsgType::CreateRoom => Ok(LobbyClientEvent::CreateRoom(player)),
             WsRxMsgType::JoinRoom => {
-                let room_id = j
+                let room_id = msg
                     .get("roomid")
                     .ok_or("Invalid json")?
                     .as_str()
@@ -215,31 +247,38 @@ impl Connection {
             }
             */
             // no handshake here !!!
-            _ => Err("Undefined msg type"),
+            _ => Err("Undefined lobby msg type"),
         }
     }
 
-    pub fn parse_receive_game(player: Player, msg: Vec<u8>) -> Result<GameEvent, &'static str> {
-        let j = serde_json::from_slice::<Value>(&msg).or(Err("Invalid json {}"))?;
-        let (msg_class, msg_type) = Self::check_rx_msg(&j).ok_or("Invalid json {}")?;
+    pub fn parse_receive_game(player: Player, msg: Value) -> Result<GameEvent, &'static str> {
+        let (msg_class, msg_type) = Self::check_rx_msg(&msg).ok_or("Invalid json {}")?;
+        if let WsMsgClass::Lobby = msg_class {
+            return Err("Invalid msg class {}");
+        }
         // use serde Deserialize to convert json value to enum GameItem/Bullet
         match msg_type {
             WsRxMsgType::UseItem => {
-                let item = j.get("use").ok_or("Invalid json")?.clone();
-                let item = serde_json::from_value::<GameItem>(item).or(Err("Invalid json"))?;
+                let item = msg.get("use").ok_or("Invalid json 1")?.clone();
+                let item =
+                    serde_json::from_value::<GameItemIndex>(item).or(Err("Invalid json 2"))?;
                 Ok(GameEvent::UseItem(player, item))
             }
             WsRxMsgType::DrawItem => {
-                let item = j.get("draw").ok_or("Invalid json")?.clone();
-                let item = serde_json::from_value::<GameItem>(item).or(Err("Invalid json"))?;
+                let item = msg.get("draw").ok_or("Invalid json 1")?.clone();
+                info!("{}", item);
+                let item = serde_json::from_value::<GameItem>(item).or(Err("Invalid json 2"))?;
                 Ok(GameEvent::DrawItem(player, Some(item)))
             }
             WsRxMsgType::Shoot => {
-                let bullet = j.get("bullet").ok_or("Invalid json")?.clone();
-                let bullet = serde_json::from_value::<bool>(bullet).or(Err("Invalid json"))?;
+                let bullet = msg.get("bullet").ok_or("Invalid json 1")?.clone();
+                let bullet = serde_json::from_value::<bool>(bullet).or(Err("Invalid json 2"))?;
                 Ok(GameEvent::Shoot(player, bullet))
             }
-            _ => Err("Undefined msg type"),
+            _ => {
+                info!("{}", msg);
+                Err("Undefined game msg type")
+            }
         }
     }
     // aync fn listen_game
@@ -318,8 +357,8 @@ impl Connection {
 
     pub async fn send_new_round(
         &mut self,
-        open_state: GameStateOpen,
-        hidden_state: GameStateHidden,
+        open_state: &GameStateOpen,
+        hidden_state: &GameStateHidden,
     ) {
         self.send_msg(json!({
             "class": "game",
@@ -329,7 +368,7 @@ impl Connection {
         }))
         .await;
     }
-    pub async fn send_new_turn(&mut self, open_state: GameStateOpen) {
+    pub async fn send_new_turn(&mut self, open_state: &GameStateOpen) {
         self.send_msg(json!({
             "class": "game",
             "type": "NewTurn",
@@ -337,7 +376,7 @@ impl Connection {
         }))
         .await;
     }
-    pub async fn send_use_item(&mut self, open_state: GameStateOpen) {
+    pub async fn send_use_item(&mut self, open_state: &GameStateOpen) {
         self.send_msg(json!({
             "class": "game",
             "type": "UseItem",
@@ -345,10 +384,10 @@ impl Connection {
         }))
         .await;
     }
-    pub async fn send_draw_item_pool(&mut self, open_state: GameStateOpen, pool: Vec<GameItem>) {
+    pub async fn send_draw_item_pool(&mut self, open_state: &GameStateOpen, pool: Vec<GameItem>) {
         self.send_msg(json!({
             "class": "game",
-            "type": "DrawItem",
+            "type": "DrawItemPool",
             "open_state": open_state,
             "item_pool": pool
         }))

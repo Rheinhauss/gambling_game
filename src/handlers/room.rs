@@ -68,10 +68,10 @@ impl GameRoom {
 
     async fn after_item_used(&mut self) {
         if let Some(open_state) = self.state.open_state(self.host_player.0) {
-            self.host_player.1.send_use_item(open_state).await;
+            self.host_player.1.send_use_item(&open_state).await;
         }
         if let Some(open_state) = self.state.open_state(self.guest_player.0) {
-            self.guest_player.1.send_use_item(open_state).await;
+            self.guest_player.1.send_use_item(&open_state).await;
         }
     }
 
@@ -85,14 +85,18 @@ impl GameRoom {
 
     async fn send_items(&mut self, player: Player, items: [GameItem; 3]) {
         if player == self.host_player.0 {
+            let open_state = self.state.open_state(player).unwrap();
+            self.host_player.1.send_new_turn(&open_state).await;
             self.host_player
                 .1
-                .send_draw_item_pool(self.state.open_state(player).unwrap(), Vec::from(items))
+                .send_draw_item_pool(&open_state, Vec::from(items))
                 .await;
         } else {
+            let open_state = self.state.open_state(player).unwrap();
+            self.guest_player.1.send_new_turn(&open_state).await;
             self.guest_player
                 .1
-                .send_draw_item_pool(self.state.open_state(player).unwrap(), Vec::from(items))
+                .send_draw_item_pool(&open_state, Vec::from(items))
                 .await;
         }
     }
@@ -104,15 +108,15 @@ impl GameRoom {
         self.host_player
             .1
             .send_new_round(
-                self.state.open_state(self.host_player.0).unwrap(),
-                self.state.hidden_state().unwrap(),
+                self.state.open_state(self.host_player.0).as_ref().unwrap(),
+                self.state.hidden_state().as_ref().unwrap(),
             )
             .await;
         self.guest_player
             .1
             .send_new_round(
-                self.state.open_state(self.guest_player.0).unwrap(),
-                self.state.hidden_state().unwrap(),
+                self.state.open_state(self.guest_player.0).as_ref().unwrap(),
+                self.state.hidden_state().as_ref().unwrap(),
             )
             .await;
     }
@@ -129,16 +133,23 @@ impl GameRoom {
     }
 
     pub async fn listen_game(&mut self) {
+        info!("start listening game of room [{}]", self.room_id);
         self.state.start_game();
         self.state.start_round();
         self.after_round_started().await;
+        if let Stage::SendItem(pl, items) = self.state.current_stage() {
+            self.send_items(pl, items).await;
+            self.state.item_sended();
+        } else {
+            panic!("fuck up!")
+        }
         info!("game event loop begin");
         while let Some(event) = self.game_events_rx.recv().await {
             // receive event from receiver (msg from client)
-            info!("state: {}", self.state.current_stage());
+            info!("stage: [{}] <{}>", self.state.current_stage(), event);
             match event {
-                GameEvent::UseItem(player, item) => {
-                    self.state.use_item(player, item);
+                GameEvent::UseItem(player, item_idx) => {
+                    self.state.use_item(player, item_idx);
                     self.after_item_used().await;
                 }
                 GameEvent::DrawItem(player, item) => {
@@ -154,6 +165,7 @@ impl GameRoom {
             }
 
             // send response to connection (msg to client)
+            info!("after stage: [{}]", self.state.current_stage());
             match self.state.current_stage() {
                 Stage::GameOver(winner) => {
                     self.after_game_over(winner).await;

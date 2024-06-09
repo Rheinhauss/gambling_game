@@ -39,7 +39,7 @@ impl std::fmt::Display for Player {
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq)]
-#[serde(rename_all(serialize = "lowercase", deserialize = "PascalCase"))]
+#[serde(rename_all(serialize = "lowercase", deserialize = "lowercase"))]
 #[serde(deny_unknown_fields)]
 pub enum GameItem {
     Knife,     // 折叠刀：使下一次开枪的伤害翻倍
@@ -54,7 +54,7 @@ pub enum GameItem {
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
-#[serde(rename_all(serialize = "lowercase", deserialize = "PascalCase"))]
+#[serde(rename_all(serialize = "lowercase", deserialize = "lowercase"))]
 #[serde(deny_unknown_fields)]
 
 pub enum Bullet {

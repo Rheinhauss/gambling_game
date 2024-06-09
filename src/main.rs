@@ -7,7 +7,7 @@ use handlers::connections::Connection;
 use handlers::lobby::{Lobby, LobbyClientEvent};
 use log::{debug, error, info, trace, warn};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, oneshot};
 use tokio::{net::tcp, sync, task};
 use tokio_tungstenite::{self, accept_async};
 
@@ -31,10 +31,14 @@ async fn main() {
     let (lobby_client_mq_tx, lobby_client_mq_rx) = mpsc::unbounded_channel::<LobbyClientEvent>();
 
     // Listen lobby for room creation and matchmaking
+    let (lb_tx, lb_rx) = oneshot::channel();
     tokio::spawn(Lobby::listen(
         lobby_client_mq_tx.clone(),
         lobby_client_mq_rx,
+        lb_tx,
     ));
+
+    let lobby = lb_rx.await.expect("Lobby failed to start.");
     // Listen room for game logic
     // tokio::spawn(Room::listen(room_mq_tx.clone(), room_receiver));
 
@@ -54,6 +58,7 @@ async fn main() {
                     ws_stream,
                     lobby_client_mq_tx.clone(),
                     peer,
+                    lobby.clone(),
                 ))
                 .await
                 .expect("Connection failed.");

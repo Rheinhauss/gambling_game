@@ -2,9 +2,11 @@
 pub mod game_event {
     use crate::utils::player::*;
 
+    pub type GameItemIndex = usize;
+
     #[derive(Debug, Clone, Copy)]
     pub enum GameEvent {
-        UseItem(Player, GameItem),
+        UseItem(Player, GameItemIndex),
         DrawItem(Player, Option<GameItem>),
         Shoot(Player, bool),
         Leave(Player),

@@ -6,6 +6,8 @@ use serde_with::serde_as;
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use super::game_event::GameItemIndex;
+
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Debug)]
 pub enum Stage {
     RoundStart,
@@ -128,6 +130,7 @@ impl GameState {
     fn is_current_player(&self, player: Player) -> bool {
         match self.stage {
             Stage::Act(current_player) => player == current_player,
+            Stage::SendItem(current_player, _) => player == current_player,
             _ => false,
         }
     }
@@ -140,7 +143,14 @@ impl GameState {
         (self.round, self.turn)
     }
 
-    pub fn use_item(&mut self, player: Player, item: GameItem) {
+    pub fn use_item(&mut self, player: Player, item_idx: GameItemIndex) {
+        let item = match self.pop_item(player, item_idx) {
+            Ok(item) => item,
+            Err(e) => {
+                error!("pop item error:{}", e);
+                return;
+            }
+        };
         if self.is_acting(player) {
             match item {
                 GameItem::Knife => {
@@ -216,6 +226,8 @@ impl GameState {
     pub fn item_sended(&mut self) {
         if let Stage::SendItem(player, _) = self.stage {
             self.stage = Stage::Act(player);
+        } else {
+            panic!("wrong stage");
         }
     }
 
@@ -327,7 +339,7 @@ impl GameState {
         false
     }
 
-    pub fn pop_item(&mut self, player: Player, index: u32) -> Result<GameItem, &str> {
+    pub fn pop_item(&mut self, player: Player, index: GameItemIndex) -> Result<GameItem, &str> {
         match self.items.get_mut(&player) {
             Some(items) => items
                 .get_mut(index as usize)
@@ -359,7 +371,7 @@ impl GameState {
                 items_self: self.get_items(&pl_self),
                 items_oppo: self.get_items(&pl_oppo),
                 playing: self.is_current_player(p),
-                last_use: self.last_use,
+                last_use: self.last_use.and_then(|it| Some(it.for_player(p))),
             })
         }
     }
@@ -371,7 +383,7 @@ impl GameState {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct GameStateOpen {
     round: u32,
     turn: u32,
@@ -380,7 +392,7 @@ pub struct GameStateOpen {
     items_self: [GameItem; 4],
     items_oppo: [GameItem; 4],
     playing: bool,
-    last_use: Option<GameItemUse>,
+    last_use: Option<GameItemUseForPlayer>,
 }
 
 #[derive(Serialize)]
@@ -391,7 +403,15 @@ pub struct GameStateHidden {
 
 #[derive(Serialize, Clone, Copy, Debug)]
 pub struct GameItemUse {
-    player: Player,
+    user: Player,
+    item: GameItem,
+    bullet: Option<Bullet>,
+    effect_num: Option<i32>,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct GameItemUseForPlayer {
+    user: String,
     item: GameItem,
     bullet: Option<Bullet>,
     effect_num: Option<i32>,
@@ -405,10 +425,18 @@ impl GameItemUse {
         effect_num: Option<i32>,
     ) -> Self {
         Self {
-            player,
+            user: player,
             item,
             bullet,
             effect_num,
+        }
+    }
+    pub fn for_player(&self, player: Player) -> GameItemUseForPlayer {
+        GameItemUseForPlayer {
+            user: if self.user == player { "self" } else { "oppo" }.to_string(),
+            item: self.item,
+            bullet: self.bullet,
+            effect_num: self.effect_num,
         }
     }
 }
