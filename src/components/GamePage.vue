@@ -302,10 +302,10 @@ export default {
     // 使用卡牌的效果
     const useItem = (data) => {
       console.log('Use Item:', data);
-      if(data.last_use.user === 'self') {
+      if(data.open_state.last_use.user === 'self') {
         playerUseItem(data);
       }
-      else if(data.last_use.user === 'oppo'){
+      else if(data.open_state.last_use.user === 'oppo'){
         opponentUseItem(data);
       }
     };
@@ -319,7 +319,7 @@ export default {
       let medicineHP = '';
       let shootBulletType = '';
       cardEffetShowStatus.value = true;
-      switch(data.last_use.item)
+      switch(data.open_state.last_use.item)
       {
         case 'knife':
           itemUseText.value = `你使用了手锯！`;
@@ -331,9 +331,9 @@ export default {
           break;
         case 'beer':
           itemUseText.value = `你使用了啤酒！`;
-          if (data.last_use.result === 'dummy') {
+          if (data.open_state.last_use.result === 'dummy') {
             beerBulletType = '哑弹';
-          } else if (data.last_use.result === 'real') {
+          } else if (data.open_state.last_use.result === 'real') {
             beerBulletType = '实弹';
           }
           itemEffetText.value = `弹出了当前枪膛的1枚子弹：${beerBulletType}`;
@@ -344,9 +344,9 @@ export default {
           break;
         case 'magnifier':
           itemUseText.value = `你使用了放大镜！`;
-          if (data.last_use.result === 'dummy') {
+          if (data.open_state.last_use.result === 'dummy') {
             beerBulletType = '哑弹';
-          } else if (data.last_use.result === 'real') {
+          } else if (data.open_state.last_use.result === 'real') {
             beerBulletType = '实弹';
           }
           itemEffetText.value = `查看当前枪膛内的子弹类型：${glassBulletType}`;
@@ -357,17 +357,17 @@ export default {
           break;
         case 'phone':
           itemUseText.value = `你使用了电话！`;
-          phoneBulletID = data.last_use.effect_num;
-          if (data.last_use.result === 'dummy') {
+          phoneBulletID = data.open_state.last_use.effect_num;
+          if (data.open_state.last_use.result === 'dummy') {
             phoneBulletType = '哑弹';
-          } else if (data.last_use.result === 'real') {
+          } else if (data.open_state.last_use.result === 'real') {
             phoneBulletType = '实弹';
           }
           itemEffetText.value = `查看第${phoneBulletID}颗子弹类型：${phoneBulletType}`;
           break;
         case 'medicine':
           itemUseText.value = `你使用了药盒！`;
-          medicineHP = data.last_use.effect_num;
+          medicineHP = data.open_state.last_use.effect_num;
           if (medicineHP == 2) {
             itemEffetText.value = `回复了2点血量`;
           } else if (medicineHP == -1) {
@@ -376,9 +376,9 @@ export default {
           break;
         case 'shoot':
           itemUseText.value = `你开枪了！`;
-          if (data.last_use.result === 'dummy') {
+          if (data.open_state.last_use.result === 'dummy') {
             shootBulletType = '哑弹';
-          } else if (data.last_use.result === 'real') {
+          } else if (data.open_state.last_use.result === 'real') {
             shootBulletType = '实弹';
           }
           itemEffetText.value = `枪中是：${shootBulletType}`;
@@ -400,7 +400,7 @@ export default {
       let medicineHP = '';
       let shootBulletType = '';
       cardEffetShowStatus.value = true;
-      switch(data.last_use.item)
+      switch(data.open_state.last_use.item)
       {
         case 'knife':
           itemUseText.value = `对手使用了手锯！`;
@@ -412,9 +412,9 @@ export default {
           break;
         case 'beer':
           itemUseText.value = `对手使用了啤酒！`;
-          if (data.last_use.result === 'dummy') {
+          if (data.open_state.last_use.result === 'dummy') {
             beerBulletType = '哑弹';
-          } else if (data.last_use.result === 'real') {
+          } else if (data.open_state.last_use.result === 'real') {
             beerBulletType = '实弹';
           }
           itemEffetText.value = `弹出了当前枪膛的1枚子弹：${beerBulletType}`;
@@ -444,9 +444,9 @@ export default {
           break;
         case 'shoot':
           itemUseText.value = `对手开枪了！`;
-          if (data.last_use.result === 'dummy') {
+          if (data.open_state.last_use.result === 'dummy') {
             shootBulletType = '哑弹';
-          } else if (data.last_use.result === 'real') {
+          } else if (data.open_state.last_use.result === 'real') {
             shootBulletType = '实弹';
           }
           itemEffetText.value = `枪中是：${shootBulletType}`;
