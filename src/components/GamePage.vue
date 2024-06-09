@@ -493,11 +493,11 @@ export default {
         togglePlayCardDisabled();
         const message = {
           class: 'game',
-          type: 'draw',
+          type: 'DrawItem',
           draw: selectedCard.value
         };
         socket.send(JSON.stringify(message));
-        console.log('Draw card:', card);
+        console.log('Draw card:', JSON.stringify(message));
         selectedCard.value = null; // 重置选择
       }
       else {
