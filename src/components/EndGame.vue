@@ -5,8 +5,8 @@
       <p v-if="isWin">你赢了！</p>
       <p v-else>你输了！</p>
       <p>本轮游戏回合数为：{{ roundNum }}</p>
-      <p>本轮游戏你打出的子弹数：{{ bulletNum }}</p>
-      <p>本轮游戏你使用的道具数：{{ propNum }}</p>
+      <!-- <p>本轮游戏你打出的子弹数：{{ bulletNum }}</p>
+      <p>本轮游戏你使用的道具数：{{ propNum }}</p> -->
     </div>
     <div class="buttons">
       <button @click="goToStartPage">返回开始页面</button>
@@ -24,8 +24,8 @@ export default {
   setup(props) {
     const isWin = ref(props.isWin);
     const roundNum = ref(props.roundNum);
-    const bulletNum = ref('');
-    const propNum = ref('');
+    // const bulletNum = ref('');
+    // const propNum = ref('');
   
     const router = useRouter();
    
@@ -47,8 +47,8 @@ export default {
     return {
       isWin,
       roundNum,
-      bulletNum,
-      propNum,
+      // bulletNum,
+      // propNum,
       goToStartPage,
       closePage
     };
