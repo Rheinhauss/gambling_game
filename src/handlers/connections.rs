@@ -221,7 +221,7 @@ impl Connection {
             WsRxMsgType::DrawItem => {
                 let item = j.get("draw").ok_or("Invalid json")?.clone();
                 let item = serde_json::from_value::<GameItem>(item).or(Err("Invalid json"))?;
-                Ok(GameEvent::DrawItem(player, item))
+                Ok(GameEvent::DrawItem(player, Some(item)))
             }
             WsRxMsgType::Shoot => {
                 let bullet = j.get("bullet").ok_or("Invalid json")?.clone();

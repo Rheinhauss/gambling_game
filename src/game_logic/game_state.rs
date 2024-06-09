@@ -45,8 +45,25 @@ impl GameState {
         }
     }
 
+    pub fn fill_revolver(&mut self) {
+        self.revolver.clear();
+        let mut temp_vec = Vec::new();
+        let real_count = fastrand::u32(2..=4);
+        let dummy_count = fastrand::u32(2..=4);
+        for _ in 0..real_count{
+            temp_vec.push(Bullet::Real);
+        }
+        for _ in 0..dummy_count{
+            temp_vec.push(Bullet::Dummy);
+        }
+        let temp_slice = temp_vec.as_mut_slice();
+        fastrand::shuffle(temp_slice);
+        self.revolver.extend(temp_slice.iter());
+    }
+
     pub fn start_round(&mut self) {
-        todo!("fill the bullets");
+        self.round += 1;
+        self.fill_revolver();
         if let Stage::RoundStart = self.stage {
             self.switch_to_player(if fastrand::bool() {
                 self.players.0
@@ -129,7 +146,9 @@ impl GameState {
                 }
             };
         }
-        self.check_game_over();
+        if !self.check_game_over(){
+            self.check_new_round();
+        }
     }
 
     pub fn draw_item(&mut self, player: Player, item: Option<GameItem>) {
@@ -180,7 +199,10 @@ impl GameState {
     fn switch_to_player(&mut self, player: Player) {
         let items = self.generate_items();
         self.stage = match self.cuffs.get(&player) {
-            Some(false) => Stage::SendItem(player, items),
+            Some(false) => { 
+                self.turn += 1;
+                Stage::SendItem(player, items)
+            }
             _ => Stage::SendItem(self.opponent_of(player), items),
         }
     }
@@ -207,17 +229,19 @@ impl GameState {
                         if is_suicide {
                             let offset = -(self.damage.get_damage() as i32);
                             self.adapt_hp(player, offset);
-                            if !self.check_game_over() {
+                            if !self.check_game_over() && !self.check_new_round() {
                                 self.switch_to_player(opponent);
                             }
                         } else {
                             let offset = -(self.damage.get_damage() as i32);
                             self.adapt_hp(opponent, offset);
-                            self.check_game_over();
+                            if !self.check_game_over(){
+                                self.check_new_round();
+                            }
                         }
                     }
                     Bullet::Dummy => {
-                        if !is_suicide {
+                        if !self.check_new_round() && !is_suicide {
                             self.switch_to_player(opponent);
                         }
                     }
@@ -231,6 +255,14 @@ impl GameState {
             *hp = 0;
         }
         self.stage = Stage::GameOver(self.opponent_of(player))
+    }
+
+    fn check_new_round(&mut self) -> bool {
+        if self.revolver.is_empty() {
+            self.stage = Stage::RoundStart;
+            return true;
+        }
+        false
     }
 
     fn check_game_over(&mut self) -> bool {

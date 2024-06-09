@@ -98,6 +98,8 @@ impl GameRoom {
     }
 
     pub async fn listen_game(&mut self) {
+        self.state.start_round();
+        self.after_round_started();
         while let Some(event) = self.game_events_rx.recv().await {
             // receive event from receiver (msg from client)
             match event {
@@ -138,6 +140,7 @@ impl GameRoom {
         }
     }
 }
+
 pub struct WaitingRoom {
     player: Player,
     room_id: RoomId,

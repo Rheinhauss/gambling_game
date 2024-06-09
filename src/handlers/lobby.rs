@@ -1,9 +1,11 @@
 ﻿use super::connections::Connection;
+use super::room;
 use super::room::GameRoom;
 use super::room::RoomId;
 use super::room::WaitingRoom;
 use crate::game_logic::game_event::GameEvent;
 use crate::utils::player::Player;
+use futures_util::TryFutureExt;
 use log::info;
 use log::warn;
 use std::collections::btree_map::BTreeMap;
@@ -122,22 +124,28 @@ impl Lobby {
         match w_room {
             None => Err("Room not found"),
             Some(w_room) => {
-                let player1 = w_room.player();
-                todo!("pass two connection to room");
-                let new_room = Arc::new(RwLock::new(GameRoom::from_waiting_room(
-                    w_room.as_ref(),
-                    new_player,
-                    game_event_rx,
-                )));
-                {
-                    let mut r = self.rooms.lock().await;
-                    r.insert(player1, new_room.clone());
-                    r.insert(new_player, new_room.clone());
+                let room_player = w_room.player();
+                if let Ok(room_conn) = self.get_connection(room_player).await{
+                    if let Ok(p2_conn) = self.get_connection(new_player).await{
+                        let new_room = Arc::new(RwLock::new(GameRoom::from_waiting_room(
+                            w_room.as_ref(),
+                            new_player,
+                            room_conn,
+                            p2_conn,
+                            game_event_rx,
+                        )));
+                        {
+                            let mut r = self.rooms.lock().await;
+                            r.insert(room_player, new_room.clone());
+                            r.insert(new_player, new_room.clone());
+                        }
+                        // add tx to connections
+                        self.change_game_event_tx(room_player, Some(game_event_tx.clone())).await;
+                        self.change_game_event_tx(new_player, Some(game_event_tx)).await;
+                        return Ok(new_room);
+                    }
                 }
-                // add tx to connections
-                self.change_game_event_tx(player1, Some(game_event_tx.clone())).await;
-                self.change_game_event_tx(new_player, Some(game_event_tx)).await;
-                Ok(new_room)
+                Err("Error when creating room: cannot find connection")
             }
         }
     }
