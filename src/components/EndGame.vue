@@ -17,13 +17,14 @@
 
 <script>
 import { ref, onMounted} from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute} from 'vue-router';
   
 export default {
   name: 'EndGame',
-  setup(props) {
-    const isWin = ref(props.isWin);
-    const roundNum = ref(props.roundNum);
+  setup() {
+    const route = useRoute();
+    const isWin = ref(route.query.isWin === 'true'); // 将字符串转换为布尔值
+    const roundNum = ref(parseInt(route.query.roundNum, 10) || 0); // 将字符串转换为整数，如果转换失败则默认为0
     // const bulletNum = ref('');
     // const propNum = ref('');
   
